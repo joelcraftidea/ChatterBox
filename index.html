@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ChatterBox</title>
-    <link rel="manifest" href="./manifest.json" />
+  <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#040917" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -397,6 +397,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .me-chip {
@@ -459,6 +460,7 @@
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .nav-pill-group {
@@ -504,6 +506,22 @@
     .round-icon-btn:hover {
       background: var(--surface-3);
       border-color: rgba(96, 165, 250, 0.55);
+    }
+
+    .sound-pill-btn {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .sound-pill-btn.muted {
+      opacity: 0.65;
+      color: var(--muted);
     }
 
     .badge-dot {
@@ -1524,7 +1542,7 @@
       <div id="signupFields" class="hidden">
         <div class="field">
           <label>Display Name</label>
-          <input id="authName" class="input" type="text" placeholder="Your name" />
+          <input id="authName" class="input" type="text" placeholder="Your name" dir="auto" />
         </div>
         <div class="field">
           <label>Username (optional)</label>
@@ -1555,7 +1573,7 @@
         </div>
         <div style="min-width:0;">
           <div class="name-line">
-            <span id="myName" class="me-name">User</span>
+            <span id="myName" class="me-name" dir="auto">User</span>
             <span class="verified-badge" title="Verified">
               <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.8 1.6-1.1 3 1.1 3-2.8 1.6-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1-2.8-1.6 1.1-3-1.1-3 2.8-1.6.9-3.1 3.2.3L12 2zm-1.2 13.2l5.4-5.4-1.4-1.4-4 4-1.8-1.8-1.4 1.4 3.2 3.2z"/></svg>
             </span>
@@ -1575,6 +1593,10 @@
             <span>Public Wing</span>
           </button>
         </div>
+
+        <button id="soundToggleBtn" class="sound-pill-btn" title="Toggle incoming message sound" onclick="toggleMessageSound()">
+          🔔 Sound ON
+        </button>
 
         <button class="round-icon-btn" title="Notifications" onclick="openNotifModal()">
           <svg class="ico" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 002.45-2h-4.9A2.5 2.5 0 0012 22zm6-6v-5a6 6 0 10-12 0v5l-2 2v1h16v-1l-2-2z"/></svg>
@@ -1606,7 +1628,7 @@
           </div>
 
           <div class="search-row">
-            <input id="lookupInput" class="input" type="text" placeholder="Search phone or email..." oninput="renderPeopleList()" />
+            <input id="lookupInput" class="input" type="text" placeholder="Search name, @handle, phone or email..." dir="auto" oninput="renderPeopleList()" />
             <button class="btn-follow-pill" onclick="checkSingleContact()">Check</button>
           </div>
 
@@ -1646,7 +1668,7 @@
               <button class="back-btn" title="Contacts" onclick="exitMobileThread()">←</button>
               <div id="activePeerAvatarSlot" style="cursor:pointer;" onclick="if(activePeerId) openProfileView(activePeerId)"></div>
               <div style="min-width:0;cursor:pointer;" onclick="if(activePeerId) openProfileView(activePeerId)">
-                <div id="activeChatPeer" class="me-name">Select a contact</div>
+                <div id="activeChatPeer" class="me-name" dir="auto">Select a contact</div>
                 <div id="activeChatStatus" class="status-line">
                   <span class="inline-dot offline"></span>
                   <span>Tap a contact to open chat</span>
@@ -1705,7 +1727,7 @@
 
               <button id="recordBtn" class="rec-pill" title="Voice message (up to 2 min)" onclick="toggleVoiceRecording()">🎙️ <span id="recLabel">2:00</span></button>
 
-              <input id="chatTextInput" class="input" type="text" placeholder="Type a message..." oninput="notifyPeerTyping()" onkeydown="if(event.key==='Enter') sendChatMessage()" />
+              <input id="chatTextInput" class="input" type="text" placeholder="Type a message..." dir="auto" oninput="notifyPeerTyping()" onkeydown="if(event.key==='Enter') sendChatMessage()" />
 
               <button class="send-circle-btn" title="Send" onclick="sendChatMessage()">
                 <svg class="ico" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -1732,7 +1754,7 @@
 
           <div class="composer-box-wrap">
             <svg class="ico" style="margin-top:3px;color:var(--muted);" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            <textarea id="postContentInput" rows="2" placeholder="Share something with the public wing..."></textarea>
+            <textarea id="postContentInput" rows="2" placeholder="Share something with the public wing..." dir="auto"></textarea>
             <button type="button" class="composer-emoji-btn" title="Add emoji" onclick="appendComposerEmoji()">😊</button>
           </div>
 
@@ -1760,10 +1782,10 @@
           </div>
 
           <div id="pollBuilder" class="poll-builder hidden">
-            <input id="pollQuestionInput" class="input" type="text" placeholder="Ask a poll question..." />
-            <input id="pollOpt1" class="input" type="text" placeholder="Option 1" />
-            <input id="pollOpt2" class="input" type="text" placeholder="Option 2" />
-            <input id="pollOpt3" class="input" type="text" placeholder="Option 3 (optional)" />
+            <input id="pollQuestionInput" class="input" type="text" placeholder="Ask a poll question..." dir="auto" />
+            <input id="pollOpt1" class="input" type="text" placeholder="Option 1" dir="auto" />
+            <input id="pollOpt2" class="input" type="text" placeholder="Option 2" dir="auto" />
+            <input id="pollOpt3" class="input" type="text" placeholder="Option 3 (optional)" dir="auto" />
           </div>
         </div>
 
@@ -1821,7 +1843,7 @@
       <div class="comment-sheet-footer">
         <div id="sheetReplyBanner" class="muted-xs hidden"></div>
         <div class="composer-row">
-          <input id="sheetCommentInput" class="input" type="text" placeholder="Write a comment..." onkeydown="if(event.key==='Enter') submitSheetComment()" />
+          <input id="sheetCommentInput" class="input" type="text" placeholder="Write a comment..." dir="auto" onkeydown="if(event.key==='Enter') submitSheetComment()" />
           <button class="btn-follow-pill" onclick="submitSheetComment()">Post</button>
         </div>
       </div>
@@ -1859,8 +1881,13 @@
     let followingCountMap = {};
     let chatPeerIdsSet = new Set();
     let contactFilter = "all";
-    let activePeerId = null;
+    let activePeerId = localStorage.getItem("cb_last_peer") || null;
     let isPublicWing = false;
+
+    let soundEnabled = localStorage.getItem("cb_sound_enabled") !== "false";
+    let audioUnlocked = false;
+    let audioCtxInstance = null;
+    const seenIncomingMsgIds = new Set();
 
     let viewedProfileId = null;
     let profileSubtab = "posts";
@@ -1884,6 +1911,75 @@
 
     let activeCommentPostId = null;
     let replyTargetCommentId = null;
+
+    function unlockAudioContext() {
+      audioUnlocked = true;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!audioCtxInstance) {
+        audioCtxInstance = new AudioCtx();
+      }
+      if (audioCtxInstance.state === "suspended") {
+        audioCtxInstance.resume().catch(() => {});
+      }
+      return audioCtxInstance;
+    }
+
+    document.addEventListener("pointerdown", unlockAudioContext, { passive: true });
+    document.addEventListener("keydown", unlockAudioContext, { passive: true });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".post-head-right") && !e.target.closest(".conv-head")) {
+        document.querySelectorAll(".post-menu-pop").forEach(el => el.classList.add("hidden"));
+      }
+      if (!e.target.closest(".engage-grid")) {
+        document.querySelectorAll(".emoji-picker").forEach(el => el.classList.add("hidden"));
+      }
+    });
+
+    function updateSoundButtonUI() {
+      const btn = document.getElementById("soundToggleBtn");
+      if (!btn) return;
+      btn.textContent = soundEnabled ? "🔔 Sound ON" : "🔕 Sound OFF";
+      btn.classList.toggle("muted", !soundEnabled);
+    }
+
+    function toggleMessageSound() {
+      unlockAudioContext();
+      soundEnabled = !soundEnabled;
+      localStorage.setItem("cb_sound_enabled", String(soundEnabled));
+      updateSoundButtonUI();
+      if (soundEnabled) {
+        playIncomingMessageTone();
+        showToast("Message sound ON");
+      } else {
+        showToast("Message sound OFF");
+      }
+    }
+
+    function playIncomingMessageTone() {
+      if (!soundEnabled) return;
+      const ctx = unlockAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1174.66, now + 0.09);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.29);
+    }
 
     function showToast(msg) {
       const t = document.getElementById("toast");
@@ -1983,6 +2079,7 @@
     }
 
     async function handleAuth() {
+      unlockAudioContext();
       document.getElementById("authError").classList.add("hidden");
       const password = document.getElementById("authPass").value;
       if (!password || password.length < 6) return setAuthError("Password/PIN must be at least 6 characters.");
@@ -2015,15 +2112,19 @@
         const uid = data.user?.id;
         if (!uid) return setAuthError("Sign-up submitted; check your email confirmation setting if needed.");
 
-        const { error: pErr } = await sb.from("profiles").insert({
-          id: uid,
-          phone_number: phoneNormalized || `email_${uid.slice(0, 8)}`,
-          email: realEmail,
-          username,
-          display_name: displayName,
-          bio: ""
-        });
-        if (pErr) return setAuthError(pErr.message);
+        if (data.session) {
+          const { error: pErr } = await sb.from("profiles").upsert({
+            id: uid,
+            phone_number: phoneNormalized || `email_${uid.slice(0, 8)}`,
+            email: realEmail,
+            username,
+            display_name: displayName,
+            bio: ""
+          }, { onConflict: "id" });
+          if (pErr) return setAuthError(pErr.message);
+        } else {
+          setAuthError("Account created! Confirm your email first, then log in to finish your profile.");
+        }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
         if (error) return setAuthError(error.message);
@@ -2039,6 +2140,7 @@
         currentUser = session.user;
         document.getElementById("authScreen").classList.add("hidden");
         document.getElementById("appShell").classList.remove("hidden");
+        updateSoundButtonUI();
         await bootstrapApp();
       } else {
         currentUser = null;
@@ -2056,9 +2158,9 @@
       renderMatchedContacts();
       renderPeopleList();
 
-      if (!activePeerId) {
+      if (!activePeerId || !profilesMap[activePeerId] || activePeerId === currentUser.id) {
         const firstOther = Object.values(profilesMap).find(p => p.id !== currentUser.id);
-        if (firstOther) selectPeer(firstOther.id, false, false);
+        if (firstOther) selectPeer(firstOther.id, true, false);
       } else {
         updateActiveChatHeader();
         await loadMessages();
@@ -2076,10 +2178,10 @@
       (data || []).forEach(p => { profilesMap[p.id] = p; });
       myProfile = profilesMap[currentUser.id] || {
         id: currentUser.id,
-        display_name: "Member",
+        display_name: currentUser.email?.split("@")[0] || "Member",
         phone_number: "",
-        email: "",
-        username: "member",
+        email: currentUser.email || "",
+        username: `user_${currentUser.id.slice(0, 6)}`,
         avatar_url: null,
         bio: ""
       };
@@ -2225,7 +2327,7 @@
           <div class="person-info" onclick="openProfileView('${p.id}')">
             ${avatarMarkup(p, "sm", true)}
             <div style="min-width:0;">
-              <div class="me-name">${escapeHtml(contactName)} <span class="muted-xs">(${escapeHtml(p.display_name)})</span></div>
+              <div class="me-name" dir="auto">${escapeHtml(contactName)} <span class="muted-xs">(${escapeHtml(p.display_name)})</span></div>
               <div class="me-sub">@${escapeHtml(p.username || "")}</div>
             </div>
           </div>
@@ -2297,7 +2399,7 @@
               ${avatarMarkup(p, "", true)}
               <div style="min-width:0;">
                 <div class="name-line">
-                  <span class="me-name">${escapeHtml(p.display_name)}</span>
+                  <span class="me-name" dir="auto">${escapeHtml(p.display_name)}</span>
                   ${VERIFIED_SVG}
                   ${isBlocked ? '<span style="color:#fca5a5;font-size:11px;">(Blocked)</span>' : ''}
                 </div>
@@ -2347,6 +2449,7 @@
 
     function selectPeer(peerId, shouldLoadMessages = true, openMobileThread = true) {
       activePeerId = peerId;
+      if (peerId) localStorage.setItem("cb_last_peer", peerId);
       updateActiveChatHeader();
       renderPeopleList();
       if (openMobileThread) {
@@ -2356,6 +2459,7 @@
     }
 
     function openChatWithPeer(peerId) {
+      unlockAudioContext();
       closeProfileView();
       setWing(false);
       selectPeer(peerId, true, true);
@@ -2438,6 +2542,12 @@
         return;
       }
 
+      (data || []).forEach(m => {
+        if (m.id !== undefined && m.id !== null) {
+          seenIncomingMsgIds.add(String(m.id));
+        }
+      });
+
       const peer = profilesMap[activePeerId] || { id: activePeerId, display_name: "Member" };
       let html = "";
       let lastDateStr = "";
@@ -2470,7 +2580,7 @@
           html += `
             <div class="msg-row mine">
               <div class="msg mine">
-                ${m.content ? `<div>${escapeHtml(m.content)}</div>` : ""}
+                ${m.content ? `<div dir="auto">${escapeHtml(m.content)}</div>` : ""}
                 ${attachmentHtml}
                 ${m.audio_url ? `<audio controls src="${m.audio_url}"></audio>` : ""}
                 <div class="msg-meta">
@@ -2488,7 +2598,7 @@
                 ${avatarMarkup(peer, "xs", false)}
               </div>
               <div class="msg theirs">
-                ${m.content ? `<div>${escapeHtml(m.content)}</div>` : ""}
+                ${m.content ? `<div dir="auto">${escapeHtml(m.content)}</div>` : ""}
                 ${attachmentHtml}
                 ${m.audio_url ? `<audio controls src="${m.audio_url}"></audio>` : ""}
                 <div class="msg-meta">
@@ -2548,6 +2658,7 @@
     }
 
     async function toggleVoiceRecording() {
+      unlockAudioContext();
       if (!mediaRecorder || mediaRecorder.state === "inactive") {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2606,6 +2717,7 @@
     }
 
     async function sendChatMessage() {
+      unlockAudioContext();
       if (!activePeerId) return showToast("Select a contact first.");
       if (blockedSet.has(activePeerId)) return showToast("Unblock this user to send messages.");
 
@@ -2630,16 +2742,17 @@
           dur = recordedDuration;
         }
 
-        const { error } = await sb.from("messages").insert({
+        const { data: inserted, error } = await sb.from("messages").insert({
           sender_id: currentUser.id,
           recipient_id: activePeerId,
           content: content || null,
           image_url: attachmentUrl,
           audio_url: audioUrl,
           audio_duration_sec: dur
-        });
+        }).select().single();
         if (error) return showToast(error.message);
 
+        if (inserted?.id) seenIncomingMsgIds.add(String(inserted.id));
         chatPeerIdsSet.add(activePeerId);
         textInput.value = "";
         clearChatAttachment();
@@ -2840,14 +2953,14 @@
       if (post.poll_question && opts.length) {
         pollHtml = `
           <div class="poll-builder">
-            <div style="font-weight:650;font-size:13px;">${escapeHtml(post.poll_question)}</div>
+            <div style="font-weight:650;font-size:13px;" dir="auto">${escapeHtml(post.poll_question)}</div>
             ${opts.map(o => {
               const cnt = votes.filter(v => v.option_id === o.id).length;
               const pct = votes.length ? Math.round((cnt / votes.length) * 100) : 0;
               const active = myVote?.option_id === o.id;
               return `
                 <button class="poll-opt ${active ? "voted" : ""}" onclick="votePoll('${post.id}', '${o.id}')">
-                  <span>${escapeHtml(o.option_text)}</span>
+                  <span dir="auto">${escapeHtml(o.option_text)}</span>
                   <span>${cnt} (${pct}%)</span>
                 </button>
               `;
@@ -2880,7 +2993,7 @@
               ${avatarMarkup(author, "", true)}
               <div style="min-width:0;">
                 <div class="name-line">
-                  <span class="me-name">${escapeHtml(author.display_name)}</span>
+                  <span class="me-name" dir="auto">${escapeHtml(author.display_name)}</span>
                   ${VERIFIED_SVG}
                 </div>
                 <div class="me-sub">@${escapeHtml(author.username || "")} • ${followersCount} Followers • ${escapeHtml(formatRelativeTime(post.created_at))}</div>
@@ -2896,7 +3009,7 @@
             </div>
           </div>
 
-          ${post.content ? `<div style="font-size:14px;line-height:1.45;">${escapeHtml(post.content)}</div>` : ""}
+          ${post.content ? `<div style="font-size:14px;line-height:1.45;" dir="auto">${escapeHtml(post.content)}</div>` : ""}
           ${post.image_url ? `<img src="${post.image_url}" class="post-img" alt="Post photo" />` : ""}
           ${pollHtml}
 
@@ -3067,7 +3180,7 @@
             </div>
 
             <div class="name-line">
-              <span style="font-size:20px;font-weight:850;">${escapeHtml(user.display_name)}</span>
+              <span style="font-size:20px;font-weight:850;" dir="auto">${escapeHtml(user.display_name)}</span>
               ${VERIFIED_SVG}
             </div>
             <div class="me-sub" style="font-size:13px;">@${escapeHtml(user.username || "")}</div>
@@ -3089,7 +3202,7 @@
                 <span class="info-icon-circle" style="width:17px;height:17px;font-size:11px;">i</span>
                 <span>About</span>
               </div>
-              <div>${user.bio ? escapeHtml(user.bio) : '<span style="color:var(--muted);">No bio added yet.</span>'}</div>
+              <div dir="auto">${user.bio ? escapeHtml(user.bio) : '<span style="color:var(--muted);">No bio added yet.</span>'}</div>
             </div>
           </div>
         </div>
@@ -3108,7 +3221,7 @@
         container.innerHTML = `
           <div class="panel-card">
             <div class="card-title"><span>About ${escapeHtml(user?.display_name || "")}</span></div>
-            <div class="muted-xs" style="font-size:13.5px;color:var(--text-soft);">
+            <div class="muted-xs" style="font-size:13.5px;color:var(--text-soft);" dir="auto">
               ${user?.bio ? escapeHtml(user.bio) : "No bio added yet."}
             </div>
           </div>
@@ -3146,12 +3259,12 @@
 
         <div class="field">
           <label>Display Name</label>
-          <input id="editDisplayName" class="input" type="text" value="${escapeHtml(myProfile.display_name || "")}" />
+          <input id="editDisplayName" class="input" type="text" dir="auto" value="${escapeHtml(myProfile.display_name || "")}" />
         </div>
 
         <div class="field">
           <label>About</label>
-          <textarea id="editProfileBio" class="textarea" rows="3" placeholder="Write something about yourself...">${escapeHtml(myProfile.bio || "")}</textarea>
+          <textarea id="editProfileBio" class="textarea" rows="3" dir="auto" placeholder="Write something about yourself...">${escapeHtml(myProfile.bio || "")}</textarea>
         </div>
 
         <button class="btn-primary" onclick="saveProfileDetails()">Save Profile</button>
@@ -3246,11 +3359,11 @@
             <div class="comment-node" style="margin-left:${Math.min(depth * 12, 32)}px;">
               <div class="comment-meta">
                 <span style="cursor:pointer;" onclick="closeCommentSection(); openProfileView('${c.author_id}')">
-                  <strong style="color:var(--text);">${escapeHtml(author.display_name)}</strong>
+                  <strong style="color:var(--text);" dir="auto">${escapeHtml(author.display_name)}</strong>
                 </span>
                 <span>${new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
-              <div class="comment-body">${escapeHtml(c.content)}</div>
+              <div class="comment-body" dir="auto">${escapeHtml(c.content)}</div>
               <div class="comment-actions">
                 <button onclick="toggleCommentLike('${c.id}')">${liked ? "❤️" : "🤍"} ${likeCount}</button>
                 <button onclick="prepareSheetReply('${c.id}', '${escapeJs(author.display_name)}')">Reply (${replyCount})</button>
@@ -3384,10 +3497,43 @@
             }, 2200);
           }
         })
-        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, async () => {
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async ({ new: row }) => {
+          if (!row) return;
+          const involvesMe = row.recipient_id === currentUser.id || row.sender_id === currentUser.id;
+          if (!involvesMe) return;
+
+          const isIncomingFromOther = row.recipient_id === currentUser.id && row.sender_id !== currentUser.id;
+          const msgKey = row.id !== undefined && row.id !== null ? String(row.id) : null;
+          const isNewUnseen = !msgKey || !seenIncomingMsgIds.has(msgKey);
+          if (msgKey) seenIncomingMsgIds.add(msgKey);
+
           await loadConversationPeers();
-          await loadMessages();
           renderPeopleList();
+
+          const involvesActivePeer =
+            activePeerId &&
+            (row.sender_id === activePeerId || row.recipient_id === activePeerId);
+
+          if (involvesActivePeer) {
+            await loadMessages();
+          }
+
+          if (isIncomingFromOther && isNewUnseen && !blockedSet.has(row.sender_id)) {
+            playIncomingMessageTone();
+            const senderName = profilesMap[row.sender_id]?.display_name || "Friend";
+            if (row.sender_id !== activePeerId || isPublicWing) {
+              showToast(`New message from ${senderName}`);
+            }
+          }
+        })
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, async ({ new: row }) => {
+          if (!row) return;
+          const involvesActivePeer =
+            activePeerId &&
+            (row.sender_id === activePeerId || row.recipient_id === activePeerId);
+          if (involvesActivePeer) {
+            await loadMessages();
+          }
         })
         .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, async () => {
           await loadBlocksAndFollows();
