@@ -1,0 +1,3436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ChatterBox</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #040917;
+      --surface: #09132b;
+      --surface-2: #0e1d40;
+      --surface-3: #142857;
+      --border: rgba(59, 130, 246, 0.34);
+      --border-strong: #3b82f6;
+      --text: #f8fafc;
+      --text-soft: #cbd5e1;
+      --muted: #8da2c4;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --online: #22c55e;
+      --danger: #ef4444;
+      --shadow-card: 0 12px 28px -12px rgba(2, 6, 23, 0.85), inset 0 1px 0 rgba(147, 197, 253, 0.12);
+      --shadow-btn: 0 6px 16px -6px rgba(37, 99, 235, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.14), transparent 42%),
+        radial-gradient(circle at 88% 8%, rgba(56, 189, 248, 0.08), transparent 36%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    button, input, textarea, select {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:active {
+      transform: scale(0.965);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    svg.ico {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    svg.ico-lg {
+      width: 26px;
+      height: 26px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    .verified-badge {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+    }
+
+    /* Circular Avatar + Intentional Green Online Dot */
+    .avatar-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .avatar-wrap.xs {
+      width: 32px;
+      height: 32px;
+    }
+
+    .avatar-wrap.sm {
+      width: 38px;
+      height: 38px;
+    }
+
+    .avatar-wrap.xl {
+      width: 92px;
+      height: 92px;
+    }
+
+    .avatar-circle {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--border-strong);
+      background: linear-gradient(145deg, var(--surface-3), var(--surface-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 750;
+      font-size: 16px;
+      color: var(--text);
+      box-shadow: 0 4px 12px rgba(2, 6, 23, 0.5);
+    }
+
+    .avatar-wrap.xs .avatar-circle {
+      font-size: 12px;
+      border-width: 1.5px;
+    }
+
+    .avatar-wrap.sm .avatar-circle {
+      font-size: 14px;
+      border-width: 1.5px;
+    }
+
+    .avatar-wrap.xl .avatar-circle {
+      font-size: 32px;
+      border-width: 3px;
+      box-shadow: 0 8px 20px rgba(2, 6, 23, 0.75);
+    }
+
+    .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+    }
+
+    .online-dot {
+      position: absolute;
+      right: 1px;
+      bottom: 1px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--online);
+      border: 2px solid var(--surface);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+    }
+
+    .avatar-wrap.xs .online-dot {
+      width: 9px;
+      height: 9px;
+      border-width: 1.5px;
+    }
+
+    .avatar-wrap.xl .online-dot {
+      width: 18px;
+      height: 18px;
+      border-width: 3px;
+      right: 2px;
+      bottom: 2px;
+    }
+
+    /* Auth Screen */
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand-badge {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 18px;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .tabs-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-weight: 650;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: var(--text);
+      box-shadow: var(--shadow-btn);
+    }
+
+    .field {
+      margin-bottom: 13px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .input, .textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 13px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .input::placeholder, .textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .input:focus, .textarea:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .btn-pill {
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+      font-weight: 650;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-pill:hover {
+      background: var(--surface-3);
+      border-color: rgba(96, 165, 250, 0.55);
+    }
+
+    .btn-pill.active {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border-color: #60a5fa;
+      color: var(--text);
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn-follow-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn-follow-pill:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .btn-follow-pill.following {
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: #93c5fd;
+      box-shadow: none;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 12px;
+    }
+
+    .err-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fecaca;
+      font-size: 13px;
+    }
+
+    /* Main App Shell */
+    .app-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 25;
+      background: rgba(4, 9, 23, 0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .me-chip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .name-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .me-name {
+      font-size: 14px;
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .me-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    .inline-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--online);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .inline-dot.offline {
+      background: #64748b;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .nav-pill-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-pill-btn {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-pill-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border-color: #60a5fa;
+      color: var(--text);
+      box-shadow: var(--shadow-btn);
+    }
+
+    .round-icon-btn {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .round-icon-btn:hover {
+      background: var(--surface-3);
+      border-color: rgba(96, 165, 250, 0.55);
+    }
+
+    .badge-dot {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--danger);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Wing Switcher */
+    .wings-container {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .wing-enter {
+      animation: wingFadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes wingFadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Two-Column Contacts + Conversation Layout */
+    .chats-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    @media (max-width: 780px) {
+      .chats-split {
+        grid-template-columns: 1fr;
+      }
+
+      .chats-split.in-thread .contacts-col {
+        display: none;
+      }
+
+      .chats-split:not(.in-thread) .conversation-col {
+        display: none;
+      }
+    }
+
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .panel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .info-callout {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(14, 29, 64, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 9px 12px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-soft);
+      line-height: 1.35;
+    }
+
+    .info-icon-circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .filter-pills-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .muted-xs {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .matched-banner {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .people-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 460px;
+      overflow-y: auto;
+    }
+
+    .person-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 12px;
+      transition: transform 0.14s ease, border-color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .person-row:hover {
+      border-color: rgba(96, 165, 250, 0.55);
+      background: rgba(20, 40, 87, 0.85);
+    }
+
+    .person-row.selected-peer {
+      background: var(--surface-3);
+      border-color: var(--border-strong);
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.3);
+    }
+
+    .person-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .person-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Conversation Panel */
+    .conversation-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 540px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .conv-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .conv-head-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .back-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .back-btn:hover {
+      background: var(--surface-3);
+    }
+
+    .conv-body {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 430px;
+      overflow-y: auto;
+    }
+
+    .date-pill-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+    }
+
+    .date-pill {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 11.5px;
+      font-weight: 650;
+      color: var(--text-soft);
+    }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .msg-row.mine {
+      justify-content: flex-end;
+    }
+
+    .msg-row.theirs {
+      justify-content: flex-start;
+    }
+
+    .msg {
+      max-width: 78%;
+      padding: 10px 13px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.42;
+      word-break: break-word;
+    }
+
+    .msg.mine {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.8);
+    }
+
+    .msg.theirs {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 11px 14px;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #93c5fd;
+      animation: typingPulse 1.2s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingPulse {
+      0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-2px); }
+    }
+
+    .msg-img {
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 12px;
+      margin-top: 6px;
+      display: block;
+    }
+
+    .attach-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      background: rgba(4, 9, 23, 0.45);
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .msg-meta {
+      font-size: 10.5px;
+      opacity: 0.85;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+
+    .status-read {
+      color: #bae6fd;
+      font-weight: 750;
+    }
+
+    audio {
+      width: 100%;
+      height: 36px;
+      margin-top: 6px;
+    }
+
+    .conv-footer {
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .composer-row {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .icon-action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--text-soft);
+      flex-shrink: 0;
+    }
+
+    .icon-action-btn:hover {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+
+    .send-circle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .send-circle-btn:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .quick-emoji-bar {
+      display: flex;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      align-self: flex-start;
+    }
+
+    .rec-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .rec-pill.recording {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+
+    /* Public Wing Column */
+    .public-col {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .wing-hero-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .wing-hero-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .wing-hero-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .wing-hero-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .composer-box-wrap {
+      position: relative;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .composer-box-wrap:focus-within {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+    }
+
+    .composer-box-wrap textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: 14px;
+      line-height: 1.4;
+      padding-right: 26px;
+    }
+
+    .composer-emoji-btn {
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      color: var(--muted);
+      font-size: 16px;
+      padding: 2px;
+    }
+
+    .composer-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 11px;
+      flex-wrap: wrap;
+    }
+
+    .poll-builder {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 11px;
+      background: var(--bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    /* Feed Post Card */
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      position: relative;
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.18s ease;
+    }
+
+    .post-card:hover {
+      border-color: rgba(96, 165, 250, 0.5);
+    }
+
+    .post-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .post-head-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .dots-btn {
+      width: 30px;
+      height: 32px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: var(--text-soft);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .dots-btn:hover {
+      background: var(--surface-2);
+    }
+
+    .post-menu-pop {
+      position: absolute;
+      top: 36px;
+      right: 0;
+      min-width: 165px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 5px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .post-menu-pop button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .post-menu-pop button:hover {
+      background: var(--surface-3);
+    }
+
+    .post-img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 14px;
+      display: block;
+      border: 1px solid var(--border);
+    }
+
+    .poll-opt {
+      width: 100%;
+      text-align: left;
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .poll-opt.voted {
+      border-color: var(--border-strong);
+      background: rgba(37, 99, 235, 0.22);
+    }
+
+    /* Post Action Row */
+    .engage-grid {
+      display: grid;
+      gap: 6px;
+      position: relative;
+      padding-top: 2px;
+    }
+
+    .engage-grid.cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .engage-grid.cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .action-pill {
+      padding: 8px 6px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+
+    .action-pill:hover {
+      background: var(--surface-3);
+      border-color: rgba(96, 165, 250, 0.5);
+    }
+
+    .action-pill.active {
+      border-color: var(--border-strong);
+      background: rgba(37, 99, 235, 0.24);
+      color: #93c5fd;
+    }
+
+    .emoji-picker {
+      position: absolute;
+      bottom: 44px;
+      left: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 35;
+      box-shadow: var(--shadow-card);
+    }
+
+    .emoji-choice {
+      font-size: 19px;
+      padding: 2px;
+    }
+
+    /* Full Profile Screen Overlay */
+    .profile-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.16), transparent 45%),
+        var(--bg);
+      overflow-y: auto;
+      animation: sheetFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes sheetFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-shell {
+      max-width: 560px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 32px;
+    }
+
+    .profile-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(4, 9, 23, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .profile-hero-card {
+      margin: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .profile-banner {
+      height: 124px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(147, 197, 253, 0.22), transparent 50%),
+        linear-gradient(125deg, #0b1f4d 0%, #1d4ed8 58%, #091533 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .profile-banner-brand {
+      font-size: 24px;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .profile-banner-tag {
+      font-size: 12px;
+      color: #dbeafe;
+      margin-top: 3px;
+    }
+
+    .profile-body {
+      padding: 0 16px 16px;
+    }
+
+    .profile-avatar-row {
+      margin-top: -46px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .profile-cta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .profile-stats-line {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .about-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+      color: var(--text-soft);
+      line-height: 1.45;
+      margin-top: 12px;
+    }
+
+    .about-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .profile-subtabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 0 12px 12px;
+    }
+
+    .profile-posts-list {
+      padding: 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Comment Sheet */
+    .comment-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 60;
+    }
+
+    .comment-sheet {
+      width: 100%;
+      max-width: 540px;
+      height: 85vh;
+      background: var(--surface);
+      border-top: 1px solid var(--border-strong);
+      border-radius: 22px 22px 0 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 -16px 40px rgba(2, 6, 23, 0.85);
+      animation: sheetSlideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes sheetSlideUp {
+      from { transform: translateY(28px); opacity: 0.6; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .comment-sheet-head {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .comment-sheet-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .comment-sheet-footer {
+      padding: 11px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .comment-node {
+      border-left: 2px solid var(--border-strong);
+      padding: 4px 0 4px 11px;
+      margin-top: 8px;
+    }
+
+    .comment-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .comment-body {
+      font-size: 13.5px;
+      color: var(--text-soft);
+      margin: 4px 0 6px;
+      line-height: 1.42;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 65;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      max-height: 86vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow-card);
+      animation: sheetFadeIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 650;
+      z-index: 80;
+      white-space: nowrap;
+      max-width: 92vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: var(--shadow-card);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand-row">
+        <div class="brand-badge">CB</div>
+        <div>
+          <div class="brand-title">ChatterBox</div>
+          <div class="brand-sub">Sign up with Email or Phone • Chats • Public Wing</div>
+        </div>
+      </div>
+
+      <div class="tabs-2">
+        <button id="tabLogin" class="tab-btn active" onclick="switchAuthMode('login')">Log In</button>
+        <button id="tabSignup" class="tab-btn" onclick="switchAuthMode('signup')">Sign Up</button>
+      </div>
+
+      <div class="tabs-2" style="margin-bottom:14px;">
+        <button id="methodPhone" class="tab-btn active" onclick="switchContactMethod('phone')">Phone Number</button>
+        <button id="methodEmail" class="tab-btn" onclick="switchContactMethod('email')">Email Address</button>
+      </div>
+
+      <div id="phoneField" class="field">
+        <label>Phone Number (with country code, e.g. +256700000000)</label>
+        <input id="authPhone" class="input" type="tel" placeholder="+256700000000" />
+      </div>
+
+      <div id="emailField" class="field hidden">
+        <label>Email Address</label>
+        <input id="authEmail" class="input" type="email" placeholder="you@example.com" />
+      </div>
+
+      <div id="signupFields" class="hidden">
+        <div class="field">
+          <label>Display Name</label>
+          <input id="authName" class="input" type="text" placeholder="Your name" />
+        </div>
+        <div class="field">
+          <label>Username (optional)</label>
+          <input id="authUsername" class="input" type="text" placeholder="@handle (optional)" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Password / PIN (min 6 chars)</label>
+        <input id="authPass" class="input" type="password" placeholder="••••••••" />
+      </div>
+
+      <button id="authSubmitBtn" class="btn-primary" onclick="handleAuth()">Log In with Phone</button>
+      <div id="authError" class="err-box hidden"></div>
+      <p class="hint">
+        Choose Email or Phone Number. Phone sign-up uses a zero-SMS synthetic email mapping on Supabase's free tier.
+      </p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appShell" class="app-shell hidden">
+    <header class="topbar">
+      <div class="me-chip" onclick="openProfileView(currentUser.id)">
+        <div id="myAvatarWrap" class="avatar-wrap">
+          <div id="myAvatar" class="avatar-circle">U</div>
+          <span class="online-dot" title="Online"></span>
+        </div>
+        <div style="min-width:0;">
+          <div class="name-line">
+            <span id="myName" class="me-name">User</span>
+            <span class="verified-badge" title="Verified">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.8 1.6-1.1 3 1.1 3-2.8 1.6-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1-2.8-1.6 1.1-3-1.1-3 2.8-1.6.9-3.1 3.2.3L12 2zm-1.2 13.2l5.4-5.4-1.4-1.4-4 4-1.8-1.8-1.4 1.4 3.2 3.2z"/></svg>
+            </span>
+          </div>
+          <div id="mySub" class="me-sub">@user</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="nav-pill-group">
+          <button id="navChats" class="nav-pill-btn active" onclick="setWing(false)">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2zm4 6v2h8v-2H8z"/></svg>
+            <span>Chats</span>
+          </button>
+          <button id="navPublic" class="nav-pill-btn" onclick="setWing(true)">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M21 4c-6.5.5-11.5 3.5-14.5 8.5L3 14l4 1.5L8.5 20l1.5-3.5c5-3 8-8 11-12.5z"/></svg>
+            <span>Public Wing</span>
+          </button>
+        </div>
+
+        <button class="round-icon-btn" title="Notifications" onclick="openNotifModal()">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 002.45-2h-4.9A2.5 2.5 0 0012 22zm6-6v-5a6 6 0 10-12 0v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <span id="notifBadge" class="badge-dot hidden">0</span>
+        </button>
+
+        <button class="round-icon-btn" title="Log Out" onclick="signOut()">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M10 3h9a2 2 0 012 2v14a2 2 0 01-2 2h-9v-2h9V5h-9V3zm1.3 5.3L15 12l-3.7 3.7-1.4-1.4 1.3-1.3H3v-2h8.2l-1.3-1.3 1.4-1.4z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="wingsContainer" class="wings-container">
+
+      <!-- CHATS WING: CONNECTED CONTACTS + CONVERSATION -->
+      <section id="chatsWing" class="chats-split wing-enter">
+
+        <!-- LEFT: CONTACTS ON CHATTERBOX -->
+        <div class="panel-card contacts-col">
+          <div class="panel-header-row">
+            <div class="panel-title-wrap">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <span>Contacts on ChatterBox</span>
+            </div>
+            <button class="btn-follow-pill" onclick="allowAndScanContacts()">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <span>Allow Contacts</span>
+            </button>
+          </div>
+
+          <div class="search-row">
+            <input id="lookupInput" class="input" type="text" placeholder="Search phone or email..." oninput="renderPeopleList()" />
+            <button class="btn-follow-pill" onclick="checkSingleContact()">Check</button>
+          </div>
+
+          <div id="contactCheckResult" class="info-callout">
+            <span class="info-icon-circle">i</span>
+            <span>Tap "Allow Contacts" to check which of your contacts use ChatterBox.</span>
+          </div>
+
+          <div class="filter-pills-row">
+            <button id="filterAll" class="btn-pill active" onclick="setContactFilter('all')">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <span>All Members</span>
+            </button>
+            <button id="filterFollowing" class="btn-pill" onclick="setContactFilter('following')">
+              <span>Following</span>
+            </button>
+            <button id="filterChats" class="btn-pill" onclick="setContactFilter('chats')">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+              <span>Chat</span>
+            </button>
+          </div>
+
+          <div id="matchedContactsSection" class="matched-banner hidden">
+            <div style="font-size:12px;font-weight:700;color:#86efac;margin-bottom:6px;">
+              Matched Contacts on ChatterBox
+            </div>
+            <div id="matchedContactsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+
+          <div id="peopleList" class="people-list"></div>
+        </div>
+
+        <!-- RIGHT: ACTIVE CONVERSATION -->
+        <div class="panel-card conversation-col conversation-card">
+          <div class="conv-head">
+            <div class="conv-head-left">
+              <button class="back-btn" title="Contacts" onclick="exitMobileThread()">←</button>
+              <div id="activePeerAvatarSlot" style="cursor:pointer;" onclick="if(activePeerId) openProfileView(activePeerId)"></div>
+              <div style="min-width:0;cursor:pointer;" onclick="if(activePeerId) openProfileView(activePeerId)">
+                <div id="activeChatPeer" class="me-name">Select a contact</div>
+                <div id="activeChatStatus" class="status-line">
+                  <span class="inline-dot offline"></span>
+                  <span>Tap a contact to open chat</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="dots-btn" title="Conversation options" onclick="toggleConvMenu()">⋮</button>
+            <div id="convMenuPop" class="post-menu-pop hidden">
+              <button onclick="toggleConvMenu(); if(activePeerId) openProfileView(activePeerId)">View Profile</button>
+              <button onclick="toggleConvMenu(); if(activePeerId) toggleFollow(activePeerId)">Follow / Unfollow</button>
+              <button id="blockPeerMenuBtn" style="color:#fca5a5;" onclick="toggleConvMenu(); toggleBlockPeer()">Block User</button>
+            </div>
+          </div>
+
+          <div id="messagesFeed" class="conv-body">
+            <div class="muted-xs">Pick someone in Contacts or follow someone in Public Wing to start chatting.</div>
+          </div>
+
+          <div class="conv-footer">
+            <div id="quickEmojiBar" class="quick-emoji-bar hidden">
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('😊')">😊</button>
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('👋')">👋</button>
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('👍')">👍</button>
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('❤️')">❤️</button>
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('😂')">😂</button>
+              <button style="font-size:18px;padding:2px 4px;" onclick="insertChatEmoji('🔥')">🔥</button>
+            </div>
+
+            <div id="voicePreviewArea" class="hidden">
+              <audio id="voicePreviewAudio" controls></audio>
+              <div class="composer-row" style="margin-top:6px;">
+                <button class="btn-pill" onclick="discardVoiceNote()">Discard Voice Note</button>
+                <span id="voiceDurationLabel" class="muted-xs">0:00</span>
+              </div>
+            </div>
+
+            <div id="chatAttachmentPreviewArea" class="hidden">
+              <img id="chatImagePreview" class="msg-img hidden" alt="Selected chat image" />
+              <div id="chatFileNameLabel" class="muted-xs hidden" style="margin-top:4px;"></div>
+              <button class="btn-pill" style="margin-top:6px;" onclick="clearChatAttachment()">Remove Attachment</button>
+            </div>
+
+            <div class="composer-row">
+              <button class="icon-action-btn" title="Emoji" onclick="toggleQuickEmojiBar()">😊</button>
+
+              <label class="icon-action-btn" title="Attach file" style="cursor:pointer;">
+                📎
+                <input id="chatFileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip" class="hidden" onchange="onChatAttachmentSelected(event)" />
+              </label>
+
+              <label class="icon-action-btn" title="Attach photo" style="cursor:pointer;">
+                🖼️
+                <input id="chatPhotoInput" type="file" accept="image/*" class="hidden" onchange="onChatAttachmentSelected(event)" />
+              </label>
+
+              <button id="recordBtn" class="rec-pill" title="Voice message (up to 2 min)" onclick="toggleVoiceRecording()">🎙️ <span id="recLabel">2:00</span></button>
+
+              <input id="chatTextInput" class="input" type="text" placeholder="Type a message..." oninput="notifyPeerTyping()" onkeydown="if(event.key==='Enter') sendChatMessage()" />
+
+              <button class="send-circle-btn" title="Send" onclick="sendChatMessage()">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- PUBLIC WING -->
+      <section id="publicWing" class="public-col wing-enter hidden">
+        <div class="panel-card">
+          <div class="wing-hero-head">
+            <div class="wing-hero-left">
+              <svg class="ico-lg" viewBox="0 0 24 24"><path d="M21 3C13.5 3.8 7.8 7.6 4.5 13.5L2 15l4.2 1.6L7.8 21l1.5-2.5c5.9-3.3 9.7-9 11.7-15.5zM8.5 14.5c2.2-3.4 5.2-5.9 9.2-7.4-1.5 4-4 7-7.4 9.2l-1.8-1.8z"/></svg>
+              <div>
+                <div class="wing-hero-title">Public Wing</div>
+                <div class="wing-hero-sub">Share Your Thoughts • Connect Globally</div>
+              </div>
+            </div>
+            <button class="btn-pill" onclick="setWing(false)">← Back to Chats</button>
+          </div>
+
+          <div class="composer-box-wrap">
+            <svg class="ico" style="margin-top:3px;color:var(--muted);" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <textarea id="postContentInput" rows="2" placeholder="Share something with the public wing..."></textarea>
+            <button type="button" class="composer-emoji-btn" title="Add emoji" onclick="appendComposerEmoji()">😊</button>
+          </div>
+
+          <div class="composer-actions-bar">
+            <label class="btn-pill" style="cursor:pointer;">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+              <span>Photo (No Videos)</span>
+              <input id="postImageInput" type="file" accept="image/*" class="hidden" onchange="onPostImageSelected(event)" />
+            </label>
+
+            <button class="btn-pill" onclick="togglePollBuilder()">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+              <span>Poll</span>
+            </button>
+
+            <button class="btn-primary" style="flex:1;min-width:110px;" onclick="createPublicPost()">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              <span>Publish</span>
+            </button>
+          </div>
+
+          <div id="postImagePreviewWrap" class="hidden" style="margin-top:10px;">
+            <img id="postImagePreview" class="post-img" alt="Post preview" />
+            <button class="btn-pill" style="margin-top:8px;" onclick="clearPostImage()">Remove Photo</button>
+          </div>
+
+          <div id="pollBuilder" class="poll-builder hidden">
+            <input id="pollQuestionInput" class="input" type="text" placeholder="Ask a poll question..." />
+            <input id="pollOpt1" class="input" type="text" placeholder="Option 1" />
+            <input id="pollOpt2" class="input" type="text" placeholder="Option 2" />
+            <input id="pollOpt3" class="input" type="text" placeholder="Option 3 (optional)" />
+          </div>
+        </div>
+
+        <div id="publicFeed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FULL PROFILE SCREEN -->
+  <div id="profileScreen" class="profile-screen hidden">
+    <div class="profile-shell">
+      <div class="profile-topbar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="back-btn" title="Back" onclick="closeProfileView()">←</button>
+          <span style="font-size:17px;font-weight:800;">ChatterBox</span>
+        </div>
+        <button id="profileMenuBtn" class="dots-btn" title="Profile options" onclick="openEditProfileModal()">⋮</button>
+      </div>
+
+      <div id="profileHeroContainer"></div>
+
+      <div class="profile-subtabs">
+        <button id="subtabPosts" class="btn-pill active" onclick="setProfileSubtab('posts')">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+          <span>Posts</span>
+        </button>
+        <button id="subtabMedia" class="btn-pill" onclick="setProfileSubtab('media')">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+          <span>Media</span>
+        </button>
+        <button id="subtabAbout" class="btn-pill" onclick="setProfileSubtab('about')">
+          <span class="info-icon-circle" style="width:16px;height:16px;font-size:10px;">i</span>
+          <span>About</span>
+        </button>
+      </div>
+
+      <div id="profileTabContent" class="profile-posts-list"></div>
+    </div>
+  </div>
+
+  <!-- DEDICATED COMMENT SECTION SHEET -->
+  <div id="commentSheetBackdrop" class="comment-sheet-backdrop hidden" onclick="if(event.target===this) closeCommentSection()">
+    <div class="comment-sheet">
+      <div class="comment-sheet-head">
+        <div>
+          <div id="commentSheetTitle" style="font-size:15px;font-weight:750;">Comments (0)</div>
+          <div id="commentSheetSub" class="muted-xs">Tap Reply on any comment to join the thread</div>
+        </div>
+        <button class="btn-pill" onclick="closeCommentSection()">Close</button>
+      </div>
+
+      <div id="commentSheetBody" class="comment-sheet-body"></div>
+
+      <div class="comment-sheet-footer">
+        <div id="sheetReplyBanner" class="muted-xs hidden"></div>
+        <div class="composer-row">
+          <input id="sheetCommentInput" class="input" type="text" placeholder="Write a comment..." onkeydown="if(event.key==='Enter') submitSheetComment()" />
+          <button class="btn-follow-pill" onclick="submitSheetComment()">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modalBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this) closeModal()">
+    <div id="modalCard" class="modal-card"></div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const SUPABASE_URL = "https://csqugnddtshdqqqsjmzm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_DereJMR2_BMZlCNyyRhVPg_IesCr7ys";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const EMOJIS = ["👍", "❤️", "😂", "🔥", "😮", "👏"];
+    const MAX_VOICE_SEC = 120;
+
+    const VERIFIED_SVG = `<span class="verified-badge"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.8 1.6-1.1 3 1.1 3-2.8 1.6-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1-2.8-1.6 1.1-3-1.1-3 2.8-1.6.9-3.1 3.2.3L12 2zm-1.2 13.2l5.4-5.4-1.4-1.4-4 4-1.8-1.8-1.4 1.4 3.2 3.2z"/></svg></span>`;
+
+    let authMode = "login";
+    let contactMethod = "phone";
+    let currentUser = null;
+    let myProfile = null;
+    let profilesMap = {};
+    let onlineUserIds = new Set();
+    let typingFromUserIds = new Set();
+    let matchedContacts = [];
+    let blockedSet = new Set();
+    let followingSet = new Set();
+    let followersCountMap = {};
+    let followingCountMap = {};
+    let chatPeerIdsSet = new Set();
+    let contactFilter = "all";
+    let activePeerId = null;
+    let isPublicWing = false;
+
+    let viewedProfileId = null;
+    let profileSubtab = "posts";
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recTimer = null;
+    let recSeconds = 0;
+    let recordedBlob = null;
+    let recordedDuration = 0;
+    let chatAttachmentFile = null;
+    let postImageFile = null;
+
+    let postsData = [];
+    let pollOptionsByPost = {};
+    let pollVotesByPost = {};
+    let reactionsByPost = {};
+    let commentsByPost = {};
+    let commentLikesByComment = {};
+    let myCommentLikesSet = new Set();
+
+    let activeCommentPostId = null;
+    let replyTargetCommentId = null;
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.remove("hidden");
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => t.classList.add("hidden"), 2400);
+    }
+
+    function isUserOnline(userId) {
+      if (currentUser && userId === currentUser.id) return true;
+      if (onlineUserIds.has(userId)) return true;
+      const p = profilesMap[userId];
+      if (!p?.updated_at) return false;
+      return (Date.now() - new Date(p.updated_at).getTime()) < 5 * 60 * 1000;
+    }
+
+    function formatLastSeen(userId) {
+      if (isUserOnline(userId)) return "Online";
+      const ts = profilesMap[userId]?.updated_at;
+      if (!ts) return "Offline";
+      const diffMin = Math.max(1, Math.round((Date.now() - new Date(ts).getTime()) / 60000));
+      if (diffMin < 60) return `Last seen ${diffMin}m ago`;
+      const diffHr = Math.round(diffMin / 60);
+      if (diffHr < 24) return `Last seen ${diffHr}h ago`;
+      return `Last seen ${Math.round(diffHr / 24)}d ago`;
+    }
+
+    function formatRelativeTime(isoStr) {
+      const diffSec = Math.max(1, Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000));
+      if (diffSec < 60) return "just now";
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      const diffDay = Math.floor(diffHr / 24);
+      if (diffDay < 7) return `${diffDay} days ago`;
+      return new Date(isoStr).toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+
+    function avatarMarkup(profile, sizeClass = "", showOnlineDot = false) {
+      const letter = (profile?.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+      const inner = profile?.avatar_url
+        ? `<img src="${profile.avatar_url}" alt="${escapeHtml(profile.display_name || "")}" />`
+        : escapeHtml(letter);
+      const dotHtml = showOnlineDot && isUserOnline(profile?.id)
+        ? `<span class="online-dot" title="Online"></span>`
+        : "";
+      return `
+        <div class="avatar-wrap ${sizeClass}">
+          <div class="avatar-circle">${inner}</div>
+          ${dotHtml}
+        </div>
+      `;
+    }
+
+    function normalizePhone(raw) {
+      const cleaned = (raw || "").replace(/[^\d+]/g, "");
+      if (!cleaned) return "";
+      return cleaned.startsWith("+") ? cleaned : "+" + cleaned;
+    }
+
+    function phoneToSyntheticEmail(phone) {
+      const digits = phone.replace(/\D/g, "");
+      return `u_${digits}@chatterbox.local`;
+    }
+
+    function switchAuthMode(mode) {
+      authMode = mode;
+      document.getElementById("tabLogin").classList.toggle("active", mode === "login");
+      document.getElementById("tabSignup").classList.toggle("active", mode === "signup");
+      document.getElementById("signupFields").classList.toggle("hidden", mode !== "signup");
+      updateAuthButtonLabel();
+      document.getElementById("authError").classList.add("hidden");
+    }
+
+    function switchContactMethod(method) {
+      contactMethod = method;
+      document.getElementById("methodPhone").classList.toggle("active", method === "phone");
+      document.getElementById("methodEmail").classList.toggle("active", method === "email");
+      document.getElementById("phoneField").classList.toggle("hidden", method !== "phone");
+      document.getElementById("emailField").classList.toggle("hidden", method !== "email");
+      updateAuthButtonLabel();
+      document.getElementById("authError").classList.add("hidden");
+    }
+
+    function updateAuthButtonLabel() {
+      const action = authMode === "login" ? "Log In" : "Sign Up";
+      const via = contactMethod === "phone" ? "with Phone" : "with Email";
+      document.getElementById("authSubmitBtn").textContent = `${action} ${via}`;
+    }
+
+    function setAuthError(msg) {
+      const el = document.getElementById("authError");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    async function handleAuth() {
+      document.getElementById("authError").classList.add("hidden");
+      const password = document.getElementById("authPass").value;
+      if (!password || password.length < 6) return setAuthError("Password/PIN must be at least 6 characters.");
+
+      let loginEmail = "";
+      let phoneNormalized = null;
+      let realEmail = null;
+
+      if (contactMethod === "phone") {
+        const rawPhone = normalizePhone(document.getElementById("authPhone").value);
+        if (!rawPhone || rawPhone.length < 8) return setAuthError("Enter a valid phone number with country code.");
+        phoneNormalized = rawPhone;
+        loginEmail = phoneToSyntheticEmail(rawPhone);
+      } else {
+        const em = (document.getElementById("authEmail").value || "").trim().toLowerCase();
+        if (!em || !em.includes("@")) return setAuthError("Enter a valid email address.");
+        realEmail = em;
+        loginEmail = em;
+      }
+
+      if (authMode === "signup") {
+        const fallbackId = phoneNormalized || realEmail;
+        const displayName = (document.getElementById("authName").value || "").trim() || fallbackId;
+        const rawHandle = (document.getElementById("authUsername").value || "").trim().replace(/^@/, "");
+        const username = rawHandle || `user_${Math.random().toString(36).slice(2, 8)}`;
+
+        const { data, error } = await sb.auth.signUp({ email: loginEmail, password });
+        if (error) return setAuthError(error.message);
+
+        const uid = data.user?.id;
+        if (!uid) return setAuthError("Sign-up submitted; check your email confirmation setting if needed.");
+
+        const { error: pErr } = await sb.from("profiles").insert({
+          id: uid,
+          phone_number: phoneNormalized || `email_${uid.slice(0, 8)}`,
+          email: realEmail,
+          username,
+          display_name: displayName,
+          bio: ""
+        });
+        if (pErr) return setAuthError(pErr.message);
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
+        if (error) return setAuthError(error.message);
+      }
+    }
+
+    async function signOut() {
+      await sb.auth.signOut();
+    }
+
+    sb.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        currentUser = session.user;
+        document.getElementById("authScreen").classList.add("hidden");
+        document.getElementById("appShell").classList.remove("hidden");
+        await bootstrapApp();
+      } else {
+        currentUser = null;
+        myProfile = null;
+        document.getElementById("appShell").classList.add("hidden");
+        document.getElementById("authScreen").classList.remove("hidden");
+      }
+    });
+
+    async function bootstrapApp() {
+      await loadProfiles();
+      await loadBlocksAndFollows();
+      await loadConversationPeers();
+      renderTopUser();
+      renderMatchedContacts();
+      renderPeopleList();
+
+      if (!activePeerId) {
+        const firstOther = Object.values(profilesMap).find(p => p.id !== currentUser.id);
+        if (firstOther) selectPeer(firstOther.id, false, false);
+      } else {
+        updateActiveChatHeader();
+        await loadMessages();
+      }
+
+      await loadPublicWing();
+      await loadNotificationsBadge();
+      if (viewedProfileId) renderProfileScreen();
+      subscribeRealtime();
+    }
+
+    async function loadProfiles() {
+      const { data } = await sb.from("profiles").select("*");
+      profilesMap = {};
+      (data || []).forEach(p => { profilesMap[p.id] = p; });
+      myProfile = profilesMap[currentUser.id] || {
+        id: currentUser.id,
+        display_name: "Member",
+        phone_number: "",
+        email: "",
+        username: "member",
+        avatar_url: null,
+        bio: ""
+      };
+    }
+
+    function renderTopUser() {
+      const el = document.getElementById("myAvatar");
+      if (myProfile?.avatar_url) {
+        el.innerHTML = `<img src="${myProfile.avatar_url}" alt="" />`;
+      } else {
+        el.textContent = (myProfile?.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+      }
+      document.getElementById("myName").textContent = myProfile.display_name || "Member";
+      document.getElementById("mySub").textContent = `@${myProfile.username || ""}`;
+    }
+
+    async function loadBlocksAndFollows() {
+      const [{ data: bData }, { data: allFollows }] = await Promise.all([
+        sb.from("blocked_users").select("blocked_id").eq("blocker_id", currentUser.id),
+        sb.from("follows").select("follower_id, following_id")
+      ]);
+      blockedSet = new Set((bData || []).map(x => x.blocked_id));
+      followingSet = new Set();
+      followersCountMap = {};
+      followingCountMap = {};
+
+      (allFollows || []).forEach(row => {
+        if (row.follower_id === currentUser.id) followingSet.add(row.following_id);
+        followersCountMap[row.following_id] = (followersCountMap[row.following_id] || 0) + 1;
+        followingCountMap[row.follower_id] = (followingCountMap[row.follower_id] || 0) + 1;
+      });
+    }
+
+    async function loadConversationPeers() {
+      const { data } = await sb
+        .from("messages")
+        .select("sender_id, recipient_id")
+        .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`);
+
+      chatPeerIdsSet = new Set();
+      (data || []).forEach(m => {
+        if (m.sender_id === currentUser.id && m.recipient_id) chatPeerIdsSet.add(m.recipient_id);
+        if (m.recipient_id === currentUser.id && m.sender_id) chatPeerIdsSet.add(m.sender_id);
+      });
+    }
+
+    function setWing(pub) {
+      isPublicWing = pub;
+      const chatsEl = document.getElementById("chatsWing");
+      const pubEl = document.getElementById("publicWing");
+      chatsEl.classList.toggle("hidden", pub);
+      pubEl.classList.toggle("hidden", !pub);
+      const activeSection = pub ? pubEl : chatsEl;
+      activeSection.classList.remove("wing-enter");
+      void activeSection.offsetWidth;
+      activeSection.classList.add("wing-enter");
+      document.getElementById("navChats").classList.toggle("active", !pub);
+      document.getElementById("navPublic").classList.toggle("active", pub);
+    }
+
+    function setContactFilter(filterName) {
+      contactFilter = filterName;
+      document.getElementById("filterAll").classList.toggle("active", filterName === "all");
+      document.getElementById("filterFollowing").classList.toggle("active", filterName === "following");
+      document.getElementById("filterChats").classList.toggle("active", filterName === "chats");
+      renderPeopleList();
+    }
+
+    function exitMobileThread() {
+      document.getElementById("chatsWing").classList.remove("in-thread");
+    }
+
+    function appendComposerEmoji() {
+      const ta = document.getElementById("postContentInput");
+      ta.value = (ta.value ? ta.value + " " : "") + "😊";
+      ta.focus();
+    }
+
+    function toggleQuickEmojiBar() {
+      document.getElementById("quickEmojiBar").classList.toggle("hidden");
+    }
+
+    function insertChatEmoji(em) {
+      const inp = document.getElementById("chatTextInput");
+      inp.value = (inp.value ? inp.value + " " : "") + em;
+      inp.focus();
+      document.getElementById("quickEmojiBar").classList.add("hidden");
+      notifyPeerTyping();
+    }
+
+    function toggleConvMenu() {
+      const pop = document.getElementById("convMenuPop");
+      pop.classList.toggle("hidden");
+    }
+
+    async function allowAndScanContacts() {
+      if ("contacts" in navigator && "ContactsManager" in window) {
+        try {
+          const list = await navigator.contacts.select(["name", "tel", "email"], { multiple: true });
+          const allProfiles = Object.values(profilesMap).filter(p => p.id !== currentUser.id);
+          const foundMatches = [];
+
+          for (const c of list) {
+            for (const rawTel of (c.tel || [])) {
+              const norm = normalizePhone(rawTel);
+              if (!norm) continue;
+              const match = allProfiles.find(p => normalizePhone(p.phone_number) === norm);
+              if (match && !foundMatches.some(m => m.profile.id === match.id)) {
+                foundMatches.push({ profile: match, contactName: (c.name && c.name[0]) || match.display_name });
+              }
+            }
+            for (const rawEm of (c.email || [])) {
+              const em = (rawEm || "").trim().toLowerCase();
+              if (!em) continue;
+              const match = allProfiles.find(p => (p.email || "").toLowerCase() === em);
+              if (match && !foundMatches.some(m => m.profile.id === match.id)) {
+                foundMatches.push({ profile: match, contactName: (c.name && c.name[0]) || match.display_name });
+              }
+            }
+          }
+
+          matchedContacts = foundMatches;
+          renderMatchedContacts();
+          showToast(foundMatches.length ? `Found ${foundMatches.length} contact(s) on ChatterBox` : "No matched contacts found");
+        } catch {
+          showToast("Contact selection was cancelled or unavailable.");
+        }
+      } else {
+        showToast("Use the search box or tap a contact below.");
+      }
+    }
+
+    function renderMatchedContacts() {
+      const sec = document.getElementById("matchedContactsSection");
+      const list = document.getElementById("matchedContactsList");
+      if (!matchedContacts.length) {
+        sec.classList.add("hidden");
+        return;
+      }
+      sec.classList.remove("hidden");
+      list.innerHTML = matchedContacts.map(({ profile: p, contactName }) => `
+        <div class="person-row">
+          <div class="person-info" onclick="openProfileView('${p.id}')">
+            ${avatarMarkup(p, "sm", true)}
+            <div style="min-width:0;">
+              <div class="me-name">${escapeHtml(contactName)} <span class="muted-xs">(${escapeHtml(p.display_name)})</span></div>
+              <div class="me-sub">@${escapeHtml(p.username || "")}</div>
+            </div>
+          </div>
+          <button class="btn-follow-pill" onclick="openChatWithPeer('${p.id}')">Chat</button>
+        </div>
+      `).join("");
+    }
+
+    function checkSingleContact() {
+      const raw = (document.getElementById("lookupInput").value || "").trim();
+      if (!raw) return;
+      const others = Object.values(profilesMap).filter(p => p.id !== currentUser.id);
+      let found = null;
+
+      if (raw.includes("@") && !raw.startsWith("@")) {
+        found = others.find(p => (p.email || "").toLowerCase() === raw.toLowerCase());
+      } else if (/^\+?\d{6,}$/.test(raw.replace(/\s+/g, ""))) {
+        const norm = normalizePhone(raw);
+        found = others.find(p => normalizePhone(p.phone_number) === norm);
+      } else {
+        const q = raw.replace(/^@/, "").toLowerCase();
+        found = others.find(p =>
+          (p.display_name || "").toLowerCase().includes(q) ||
+          (p.username || "").toLowerCase().includes(q)
+        );
+      }
+
+      if (found) {
+        if (!matchedContacts.some(m => m.profile.id === found.id)) {
+          matchedContacts.push({ profile: found, contactName: found.display_name });
+          renderMatchedContacts();
+        }
+        openProfileView(found.id);
+      } else {
+        showToast(`No member matched "${raw}"`);
+      }
+    }
+
+    function renderPeopleList() {
+      const container = document.getElementById("peopleList");
+      const q = (document.getElementById("lookupInput")?.value || "").trim().replace(/^@/, "").toLowerCase();
+      const normQuery = normalizePhone(q);
+
+      const others = Object.values(profilesMap).filter(p => {
+        if (p.id === currentUser.id) return false;
+        if (contactFilter === "following" && !followingSet.has(p.id)) return false;
+        if (contactFilter === "chats" && !chatPeerIdsSet.has(p.id) && activePeerId !== p.id) return false;
+
+        if (!q) return true;
+        const nameMatch = (p.display_name || "").toLowerCase().includes(q);
+        const userMatch = (p.username || "").toLowerCase().includes(q);
+        const emailMatch = (p.email || "").toLowerCase().includes(q);
+        const phoneMatch = normQuery && normalizePhone(p.phone_number).includes(normQuery);
+        return nameMatch || userMatch || emailMatch || phoneMatch;
+      });
+
+      if (!others.length) {
+        container.innerHTML = `<div class="muted-xs">No contacts in this view yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = others.map(p => {
+        const isSelected = activePeerId === p.id;
+        const isBlocked = blockedSet.has(p.id);
+        const online = isUserOnline(p.id);
+        return `
+          <div class="person-row ${isSelected ? "selected-peer" : ""}" onclick="openChatWithPeer('${p.id}')">
+            <div class="person-info" onclick="event.stopPropagation(); openProfileView('${p.id}')">
+              ${avatarMarkup(p, "", true)}
+              <div style="min-width:0;">
+                <div class="name-line">
+                  <span class="me-name">${escapeHtml(p.display_name)}</span>
+                  ${VERIFIED_SVG}
+                  ${isBlocked ? '<span style="color:#fca5a5;font-size:11px;">(Blocked)</span>' : ''}
+                </div>
+                <div class="status-line">
+                  <span class="inline-dot ${online ? "" : "offline"}"></span>
+                  <span>${escapeHtml(formatLastSeen(p.id))}</span>
+                </div>
+              </div>
+            </div>
+            <div class="person-actions">
+              <button class="btn-follow-pill" onclick="event.stopPropagation(); openChatWithPeer('${p.id}')">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                <span>Chat</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function updateActiveChatHeader() {
+      const slot = document.getElementById("activePeerAvatarSlot");
+      const nameEl = document.getElementById("activeChatPeer");
+      const statusEl = document.getElementById("activeChatStatus");
+      const blockMenuBtn = document.getElementById("blockPeerMenuBtn");
+
+      if (!activePeerId || !profilesMap[activePeerId]) {
+        slot.innerHTML = "";
+        nameEl.textContent = "Select a contact";
+        statusEl.innerHTML = `<span class="inline-dot offline"></span><span>Tap a contact to open chat</span>`;
+        return;
+      }
+
+      const peer = profilesMap[activePeerId];
+      slot.innerHTML = avatarMarkup(peer, "sm", true);
+      nameEl.textContent = peer.display_name;
+      const online = isUserOnline(peer.id);
+      const typing = typingFromUserIds.has(peer.id);
+      statusEl.innerHTML = `
+        <span class="inline-dot ${online ? "" : "offline"}"></span>
+        <span>${typing ? "Typing..." : escapeHtml(formatLastSeen(peer.id))}</span>
+      `;
+      if (blockMenuBtn) {
+        blockMenuBtn.textContent = blockedSet.has(activePeerId) ? "Unblock User" : "Block User";
+      }
+    }
+
+    function selectPeer(peerId, shouldLoadMessages = true, openMobileThread = true) {
+      activePeerId = peerId;
+      updateActiveChatHeader();
+      renderPeopleList();
+      if (openMobileThread) {
+        document.getElementById("chatsWing").classList.add("in-thread");
+      }
+      if (shouldLoadMessages) loadMessages();
+    }
+
+    function openChatWithPeer(peerId) {
+      closeProfileView();
+      setWing(false);
+      selectPeer(peerId, true, true);
+      document.getElementById("chatTextInput").focus();
+    }
+
+    function notifyPeerTyping() {
+      if (!activePeerId || !subscribeRealtime._sub) return;
+      subscribeRealtime._sub.send({
+        type: "broadcast",
+        event: "typing",
+        payload: { from: currentUser.id, to: activePeerId }
+      });
+    }
+
+    async function toggleBlockPeer() {
+      if (!activePeerId) return;
+      if (blockedSet.has(activePeerId)) {
+        await sb.from("blocked_users").delete().eq("blocker_id", currentUser.id).eq("blocked_id", activePeerId);
+        blockedSet.delete(activePeerId);
+        showToast("User unblocked");
+      } else {
+        await sb.from("blocked_users").insert({ blocker_id: currentUser.id, blocked_id: activePeerId });
+        blockedSet.add(activePeerId);
+        showToast("User blocked");
+      }
+      updateActiveChatHeader();
+      renderPeopleList();
+      renderPublicFeed();
+    }
+
+    async function toggleFollow(targetId) {
+      if (targetId === currentUser.id) {
+        openEditProfileModal();
+        return;
+      }
+      if (followingSet.has(targetId)) {
+        await sb.from("follows").delete().eq("follower_id", currentUser.id).eq("following_id", targetId);
+        followingSet.delete(targetId);
+        followersCountMap[targetId] = Math.max(0, (followersCountMap[targetId] || 1) - 1);
+        showToast("Unfollowed");
+      } else {
+        await sb.from("follows").insert({ follower_id: currentUser.id, following_id: targetId });
+        followingSet.add(targetId);
+        followersCountMap[targetId] = (followersCountMap[targetId] || 0) + 1;
+        showToast("Following");
+      }
+      renderPeopleList();
+      renderPublicFeed();
+      if (viewedProfileId === targetId) renderProfileScreen();
+    }
+
+    async function markIncomingMessagesRead(peerId) {
+      await sb
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("sender_id", peerId)
+        .eq("recipient_id", currentUser.id)
+        .is("read_at", null);
+    }
+
+    function isImageUrl(url) {
+      return /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url || "");
+    }
+
+    async function loadMessages() {
+      const feed = document.getElementById("messagesFeed");
+      if (!activePeerId) return;
+
+      await markIncomingMessagesRead(activePeerId);
+
+      const { data, error } = await sb
+        .from("messages")
+        .select("*")
+        .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${activePeerId}),and(sender_id.eq.${activePeerId},recipient_id.eq.${currentUser.id})`)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        feed.innerHTML = `<div class="muted-xs">${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      const peer = profilesMap[activePeerId] || { id: activePeerId, display_name: "Member" };
+      let html = "";
+      let lastDateStr = "";
+
+      (data || []).forEach(m => {
+        const dt = new Date(m.created_at);
+        const dateStr = dt.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+        if (dateStr !== lastDateStr) {
+          lastDateStr = dateStr;
+          html += `<div class="date-pill-wrap"><span class="date-pill">${escapeHtml(dateStr)}</span></div>`;
+        }
+
+        const mine = m.sender_id === currentUser.id;
+        let attachmentHtml = "";
+        if (m.image_url) {
+          if (isImageUrl(m.image_url)) {
+            attachmentHtml = `<img src="${m.image_url}" class="msg-img" alt="Attached image" />`;
+          } else {
+            const rawName = decodeURIComponent((m.image_url.split("/").pop() || "attachment").replace(/^\d+_[a-z0-9]+_/, ""));
+            attachmentHtml = `<a class="attach-chip" href="${m.image_url}" target="_blank" rel="noopener">📎 ${escapeHtml(rawName)}</a>`;
+          }
+        }
+
+        const timeLabel = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const statusLabel = mine
+          ? (m.read_at ? `<span class="status-read">✓✓</span>` : `<span>✓</span>`)
+          : "";
+
+        if (mine) {
+          html += `
+            <div class="msg-row mine">
+              <div class="msg mine">
+                ${m.content ? `<div>${escapeHtml(m.content)}</div>` : ""}
+                ${attachmentHtml}
+                ${m.audio_url ? `<audio controls src="${m.audio_url}"></audio>` : ""}
+                <div class="msg-meta">
+                  ${m.audio_duration_sec ? `<span>${formatSec(m.audio_duration_sec)}</span>` : ""}
+                  <span>${timeLabel}</span>
+                  ${statusLabel}
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="msg-row theirs">
+              <div style="cursor:pointer;" onclick="openProfileView('${peer.id}')">
+                ${avatarMarkup(peer, "xs", false)}
+              </div>
+              <div class="msg theirs">
+                ${m.content ? `<div>${escapeHtml(m.content)}</div>` : ""}
+                ${attachmentHtml}
+                ${m.audio_url ? `<audio controls src="${m.audio_url}"></audio>` : ""}
+                <div class="msg-meta">
+                  ${m.audio_duration_sec ? `<span>${formatSec(m.audio_duration_sec)}</span>` : ""}
+                  <span>${timeLabel}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      if (typingFromUserIds.has(activePeerId)) {
+        html += `
+          <div class="msg-row theirs">
+            ${avatarMarkup(peer, "xs", false)}
+            <div class="typing-bubble">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+        `;
+      }
+
+      feed.innerHTML = html || `<div class="muted-xs">No messages yet. Send a message below.</div>`;
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function onChatAttachmentSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      chatAttachmentFile = file;
+      const imgEl = document.getElementById("chatImagePreview");
+      const nameEl = document.getElementById("chatFileNameLabel");
+
+      if (file.type.startsWith("image/")) {
+        imgEl.src = URL.createObjectURL(file);
+        imgEl.classList.remove("hidden");
+        nameEl.classList.add("hidden");
+      } else {
+        imgEl.classList.add("hidden");
+        nameEl.textContent = `Attachment: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`;
+        nameEl.classList.remove("hidden");
+      }
+      document.getElementById("chatAttachmentPreviewArea").classList.remove("hidden");
+    }
+
+    function clearChatAttachment() {
+      chatAttachmentFile = null;
+      document.getElementById("chatFileInput").value = "";
+      document.getElementById("chatPhotoInput").value = "";
+      document.getElementById("chatImagePreview").src = "";
+      document.getElementById("chatImagePreview").classList.add("hidden");
+      document.getElementById("chatFileNameLabel").classList.add("hidden");
+      document.getElementById("chatAttachmentPreviewArea").classList.add("hidden");
+    }
+
+    async function toggleVoiceRecording() {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          recSeconds = 0;
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) audioChunks.push(ev.data); };
+          mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(recTimer);
+            recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+            recordedDuration = Math.min(recSeconds || 1, MAX_VOICE_SEC);
+            const url = URL.createObjectURL(recordedBlob);
+            document.getElementById("voicePreviewAudio").src = url;
+            document.getElementById("voiceDurationLabel").textContent = `Voice note: ${formatSec(recordedDuration)}`;
+            document.getElementById("voicePreviewArea").classList.remove("hidden");
+            document.getElementById("recordBtn").classList.remove("recording");
+            document.getElementById("recLabel").textContent = "2:00";
+          };
+          mediaRecorder.start();
+          document.getElementById("recordBtn").classList.add("recording");
+          document.getElementById("recLabel").textContent = "0:00 / 2:00";
+          recTimer = setInterval(() => {
+            recSeconds++;
+            document.getElementById("recLabel").textContent = `${formatSec(recSeconds)} / 2:00`;
+            if (recSeconds >= MAX_VOICE_SEC) stopVoiceRecording();
+          }, 1000);
+        } catch {
+          showToast("Microphone permission denied.");
+        }
+      } else {
+        stopVoiceRecording();
+      }
+    }
+
+    function stopVoiceRecording() {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+    }
+
+    function discardVoiceNote() {
+      recordedBlob = null;
+      recordedDuration = 0;
+      document.getElementById("voicePreviewArea").classList.add("hidden");
+      document.getElementById("voicePreviewAudio").src = "";
+    }
+
+    async function uploadToBucket(bucket, fileOrBlob, ext, cleanLabel = "") {
+      const safeTag = cleanLabel ? `_${cleanLabel.replace(/[^a-zA-Z0-9._-]/g, "_")}` : "";
+      const path = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2, 6)}${safeTag}.${ext}`;
+      const { error } = await sb.storage.from(bucket).upload(path, fileOrBlob, { upsert: false });
+      if (error) throw error;
+      const { data } = sb.storage.from(bucket).getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    async function sendChatMessage() {
+      if (!activePeerId) return showToast("Select a contact first.");
+      if (blockedSet.has(activePeerId)) return showToast("Unblock this user to send messages.");
+
+      const textInput = document.getElementById("chatTextInput");
+      const content = textInput.value.trim();
+      if (!content && !chatAttachmentFile && !recordedBlob) return;
+
+      try {
+        let attachmentUrl = null;
+        let audioUrl = null;
+        let dur = null;
+
+        if (chatAttachmentFile) {
+          const parts = chatAttachmentFile.name.split(".");
+          const ext = (parts.length > 1 ? parts.pop() : "bin").toLowerCase();
+          const baseName = parts.join(".");
+          attachmentUrl = await uploadToBucket("chat-images", chatAttachmentFile, ext, baseName);
+        }
+
+        if (recordedBlob) {
+          audioUrl = await uploadToBucket("voice-notes", recordedBlob, "webm");
+          dur = recordedDuration;
+        }
+
+        const { error } = await sb.from("messages").insert({
+          sender_id: currentUser.id,
+          recipient_id: activePeerId,
+          content: content || null,
+          image_url: attachmentUrl,
+          audio_url: audioUrl,
+          audio_duration_sec: dur
+        });
+        if (error) return showToast(error.message);
+
+        chatPeerIdsSet.add(activePeerId);
+        textInput.value = "";
+        clearChatAttachment();
+        discardVoiceNote();
+        loadMessages();
+      } catch (err) {
+        showToast(err.message || "Failed to send message.");
+      }
+    }
+
+    function togglePollBuilder() {
+      document.getElementById("pollBuilder").classList.toggle("hidden");
+    }
+
+    function onPostImageSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        e.target.value = "";
+        return showToast("Images only—videos are not allowed in Public Wing.");
+      }
+      postImageFile = file;
+      document.getElementById("postImagePreview").src = URL.createObjectURL(file);
+      document.getElementById("postImagePreviewWrap").classList.remove("hidden");
+    }
+
+    function clearPostImage() {
+      postImageFile = null;
+      document.getElementById("postImageInput").value = "";
+      document.getElementById("postImagePreviewWrap").classList.add("hidden");
+    }
+
+    async function createPublicPost() {
+      const content = document.getElementById("postContentInput").value.trim();
+      const pollQ = document.getElementById("pollQuestionInput").value.trim();
+      const opts = [
+        document.getElementById("pollOpt1").value.trim(),
+        document.getElementById("pollOpt2").value.trim(),
+        document.getElementById("pollOpt3").value.trim()
+      ].filter(Boolean);
+
+      if (!content && !postImageFile && !pollQ) {
+        return showToast("Write a post, add an image, or create a poll.");
+      }
+      if (pollQ && opts.length < 2) {
+        return showToast("Add at least 2 poll options.");
+      }
+
+      try {
+        let imageUrl = null;
+        if (postImageFile) {
+          const ext = (postImageFile.name.split(".").pop() || "jpg").toLowerCase();
+          imageUrl = await uploadToBucket("chat-images", postImageFile, ext);
+        }
+
+        const { data: post, error } = await sb.from("public_posts").insert({
+          author_id: currentUser.id,
+          content: content || null,
+          image_url: imageUrl,
+          poll_question: pollQ || null
+        }).select().single();
+
+        if (error) return showToast(error.message);
+
+        if (pollQ && opts.length >= 2) {
+          await sb.from("poll_options").insert(
+            opts.map((opt, idx) => ({ post_id: post.id, option_text: opt, position: idx }))
+          );
+        }
+
+        const { data: followers } = await sb.from("follows").select("follower_id").eq("following_id", currentUser.id);
+        if (followers?.length) {
+          await sb.from("notifications").insert(
+            followers.map(f => ({
+              recipient_id: f.follower_id,
+              actor_id: currentUser.id,
+              post_id: post.id,
+              message: `${myProfile.display_name} posted in Public Wing`
+            }))
+          );
+        }
+
+        document.getElementById("postContentInput").value = "";
+        document.getElementById("pollQuestionInput").value = "";
+        document.getElementById("pollOpt1").value = "";
+        document.getElementById("pollOpt2").value = "";
+        document.getElementById("pollOpt3").value = "";
+        document.getElementById("pollBuilder").classList.add("hidden");
+        clearPostImage();
+        showToast("Published");
+        await loadPublicWing();
+      } catch (err) {
+        showToast(err.message || "Could not publish.");
+      }
+    }
+
+    async function loadPublicWing() {
+      const [{ data: posts }, { data: pOpts }, { data: pVotes }, { data: reacts }, { data: cmts }, { data: cLikes }] =
+        await Promise.all([
+          sb.from("public_posts").select("*").order("created_at", { ascending: false }),
+          sb.from("poll_options").select("*").order("position", { ascending: true }),
+          sb.from("poll_votes").select("*"),
+          sb.from("post_reactions").select("*"),
+          sb.from("post_comments").select("*").order("created_at", { ascending: true }),
+          sb.from("comment_likes").select("*")
+        ]);
+
+      postsData = (posts || []).filter(p => !blockedSet.has(p.author_id));
+      pollOptionsByPost = {};
+      (pOpts || []).forEach(o => {
+        (pollOptionsByPost[o.post_id] = pollOptionsByPost[o.post_id] || []).push(o);
+      });
+
+      pollVotesByPost = {};
+      (pVotes || []).forEach(v => {
+        (pollVotesByPost[v.post_id] = pollVotesByPost[v.post_id] || []).push(v);
+      });
+
+      reactionsByPost = {};
+      (reacts || []).forEach(r => {
+        (reactionsByPost[r.post_id] = reactionsByPost[r.post_id] || []).push(r);
+      });
+
+      commentsByPost = {};
+      (cmts || []).forEach(c => {
+        if (!blockedSet.has(c.author_id)) {
+          (commentsByPost[c.post_id] = commentsByPost[c.post_id] || []).push(c);
+        }
+      });
+
+      commentLikesByComment = {};
+      myCommentLikesSet = new Set();
+      (cLikes || []).forEach(l => {
+        commentLikesByComment[l.comment_id] = (commentLikesByComment[l.comment_id] || 0) + 1;
+        if (l.user_id === currentUser.id) myCommentLikesSet.add(l.comment_id);
+      });
+
+      renderPublicFeed();
+      if (viewedProfileId) renderProfileScreen();
+      if (activeCommentPostId) {
+        renderCommentSheetContent();
+      }
+    }
+
+    function countTotalCommentsRecursive(postId) {
+      return (commentsByPost[postId] || []).length;
+    }
+
+    function togglePostMenu(postId) {
+      const target = document.getElementById(`postMenu_${postId}`);
+      const wasHidden = target?.classList.contains("hidden");
+      document.querySelectorAll(".post-menu-pop").forEach(el => el.classList.add("hidden"));
+      if (target && wasHidden) target.classList.remove("hidden");
+    }
+
+    async function deleteOwnPost(postId) {
+      document.querySelectorAll(".post-menu-pop").forEach(el => el.classList.add("hidden"));
+      const { error } = await sb.from("public_posts").delete().eq("id", postId).eq("author_id", currentUser.id);
+      if (error) return showToast(error.message);
+      showToast("Post deleted");
+      await loadPublicWing();
+    }
+
+    async function sharePost(postId) {
+      const post = postsData.find(p => p.id === postId);
+      const author = post ? (profilesMap[post.author_id]?.display_name || "ChatterBox") : "ChatterBox";
+      const shareText = `${author} on ChatterBox: ${post?.content || "Check out this post on ChatterBox."}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "ChatterBox", text: shareText });
+          return;
+        } catch {}
+      }
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        showToast("Post copied");
+      } else {
+        showToast("Ready to share");
+      }
+    }
+
+    function renderPostCardHtml(post, showFollowButtonInFeed = true) {
+      const author = profilesMap[post.author_id] || { id: post.author_id, display_name: "Member", username: "" };
+      const isMe = post.author_id === currentUser.id;
+      const isFollowing = followingSet.has(post.author_id);
+      const showMessageBtn = !isMe && isFollowing;
+      const followersCount = followersCountMap[post.author_id] || 0;
+
+      const postReacts = reactionsByPost[post.id] || [];
+      const myReact = postReacts.find(r => r.user_id === currentUser.id);
+      const totalComments = countTotalCommentsRecursive(post.id);
+
+      const opts = pollOptionsByPost[post.id] || [];
+      const votes = pollVotesByPost[post.id] || [];
+      const myVote = votes.find(v => v.voter_id === currentUser.id);
+
+      let pollHtml = "";
+      if (post.poll_question && opts.length) {
+        pollHtml = `
+          <div class="poll-builder">
+            <div style="font-weight:650;font-size:13px;">${escapeHtml(post.poll_question)}</div>
+            ${opts.map(o => {
+              const cnt = votes.filter(v => v.option_id === o.id).length;
+              const pct = votes.length ? Math.round((cnt / votes.length) * 100) : 0;
+              const active = myVote?.option_id === o.id;
+              return `
+                <button class="poll-opt ${active ? "voted" : ""}" onclick="votePoll('${post.id}', '${o.id}')">
+                  <span>${escapeHtml(o.option_text)}</span>
+                  <span>${cnt} (${pct}%)</span>
+                </button>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      let rightControlsHtml = "";
+      if (showFollowButtonInFeed) {
+        const followBtnHtml = isMe
+          ? `<button class="btn-follow-pill following" onclick="openProfileView('${currentUser.id}')">Your Post</button>`
+          : `<button class="btn-follow-pill ${isFollowing ? "following" : ""}" onclick="toggleFollow('${post.author_id}')">
+              <span>${isFollowing ? "Following" : "+ Follow"}</span>
+            </button>`;
+        rightControlsHtml = `
+          ${followBtnHtml}
+          <button class="dots-btn" title="More options" onclick="togglePostMenu('${post.id}')">⋮</button>
+        `;
+      } else {
+        rightControlsHtml = `
+          <button class="dots-btn" title="More options" onclick="togglePostMenu('${post.id}')">⋮</button>
+        `;
+      }
+
+      return `
+        <article class="post-card">
+          <div class="post-head">
+            <div class="person-info" onclick="openProfileView('${post.author_id}')">
+              ${avatarMarkup(author, "", true)}
+              <div style="min-width:0;">
+                <div class="name-line">
+                  <span class="me-name">${escapeHtml(author.display_name)}</span>
+                  ${VERIFIED_SVG}
+                </div>
+                <div class="me-sub">@${escapeHtml(author.username || "")} • ${followersCount} Followers • ${escapeHtml(formatRelativeTime(post.created_at))}</div>
+              </div>
+            </div>
+
+            <div class="post-head-right">
+              ${rightControlsHtml}
+              <div id="postMenu_${post.id}" class="post-menu-pop hidden">
+                <button onclick="togglePostMenu('${post.id}'); openProfileView('${post.author_id}')">View Profile & About</button>
+                ${isMe ? `<button style="color:#fca5a5;" onclick="deleteOwnPost('${post.id}')">Delete Post</button>` : ""}
+              </div>
+            </div>
+          </div>
+
+          ${post.content ? `<div style="font-size:14px;line-height:1.45;">${escapeHtml(post.content)}</div>` : ""}
+          ${post.image_url ? `<img src="${post.image_url}" class="post-img" alt="Post photo" />` : ""}
+          ${pollHtml}
+
+          <div class="engage-grid ${showMessageBtn ? "cols-4" : "cols-3"}">
+            <button
+              class="action-pill ${myReact ? "active" : ""}"
+              onpointerdown="startReactLongPress('${post.id}')"
+              onpointerup="endReactTapOrLongPress('${post.id}')"
+              onpointerleave="cancelReactLongPress()"
+            >
+              <span>${myReact ? myReact.emoji : "👍"}</span>
+              <span>Like${postReacts.length ? " " + postReacts.length : ""}</span>
+            </button>
+
+            <button class="action-pill" onclick="openCommentSection('${post.id}')">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>
+              <span>Comment${totalComments ? " " + totalComments : ""}</span>
+            </button>
+
+            <button class="action-pill" onclick="sharePost('${post.id}')">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>
+              <span>Share</span>
+            </button>
+
+            ${showMessageBtn ? `
+              <button class="action-pill" onclick="openChatWithPeer('${post.author_id}')">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                <span>Message</span>
+              </button>
+            ` : ""}
+
+            <div id="emojiPicker_${post.id}" class="emoji-picker hidden">
+              ${EMOJIS.map(em => `
+                <button class="emoji-choice" onclick="setPostReaction('${post.id}', '${em}')">${em}</button>
+              `).join("")}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderPublicFeed() {
+      const feed = document.getElementById("publicFeed");
+      if (!postsData.length) {
+        feed.innerHTML = `<div class="panel-card muted-xs">No public posts yet.</div>`;
+        return;
+      }
+      feed.innerHTML = postsData.map(post => renderPostCardHtml(post, true)).join("");
+    }
+
+    let longPressTimer = null;
+    let longPressTriggered = false;
+
+    function startReactLongPress(postId) {
+      longPressTriggered = false;
+      clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        openEmojiPicker(postId);
+      }, 450);
+    }
+
+    function cancelReactLongPress() {
+      clearTimeout(longPressTimer);
+    }
+
+    function endReactTapOrLongPress(postId) {
+      clearTimeout(longPressTimer);
+      if (!longPressTriggered) {
+        quickLikePost(postId);
+      }
+    }
+
+    function openEmojiPicker(postId) {
+      document.querySelectorAll(".emoji-picker").forEach(el => el.classList.add("hidden"));
+      const picker = document.getElementById(`emojiPicker_${postId}`);
+      if (picker) picker.classList.remove("hidden");
+    }
+
+    async function quickLikePost(postId) {
+      const list = reactionsByPost[postId] || [];
+      const existing = list.find(r => r.user_id === currentUser.id);
+      if (existing) {
+        await sb.from("post_reactions").delete().eq("id", existing.id);
+      } else {
+        await sb.from("post_reactions").insert({ post_id: postId, user_id: currentUser.id, emoji: "👍" });
+      }
+      await loadPublicWing();
+    }
+
+    async function setPostReaction(postId, emoji) {
+      document.querySelectorAll(".emoji-picker").forEach(el => el.classList.add("hidden"));
+      await sb.from("post_reactions").upsert(
+        { post_id: postId, user_id: currentUser.id, emoji },
+        { onConflict: "post_id,user_id" }
+      );
+      await loadPublicWing();
+    }
+
+    async function votePoll(postId, optionId) {
+      await sb.from("poll_votes").upsert(
+        { post_id: postId, option_id: optionId, voter_id: currentUser.id },
+        { onConflict: "post_id,voter_id" }
+      );
+      await loadPublicWing();
+    }
+
+    /* Full Profile Screen */
+    function openProfileView(userId) {
+      viewedProfileId = userId;
+      profileSubtab = "posts";
+      document.getElementById("subtabPosts").classList.add("active");
+      document.getElementById("subtabMedia").classList.remove("active");
+      document.getElementById("subtabAbout").classList.remove("active");
+      renderProfileScreen();
+      document.getElementById("profileScreen").classList.remove("hidden");
+    }
+
+    function closeProfileView() {
+      viewedProfileId = null;
+      document.getElementById("profileScreen").classList.add("hidden");
+    }
+
+    function setProfileSubtab(tab) {
+      profileSubtab = tab;
+      document.getElementById("subtabPosts").classList.toggle("active", tab === "posts");
+      document.getElementById("subtabMedia").classList.toggle("active", tab === "media");
+      document.getElementById("subtabAbout").classList.toggle("active", tab === "about");
+      renderProfileTabBody();
+    }
+
+    function renderProfileScreen() {
+      if (!viewedProfileId) return;
+      const user = profilesMap[viewedProfileId];
+      if (!user) return;
+
+      const isMe = user.id === currentUser.id;
+      const isFollowing = followingSet.has(user.id);
+      const followers = followersCountMap[user.id] || 0;
+      const following = followingCountMap[user.id] || 0;
+      const online = isUserOnline(user.id);
+
+      const actionButtonsHtml = isMe
+        ? `
+          <button class="btn-follow-pill" style="padding:10px 16px;" onclick="openEditProfileModal()">Edit Profile & About</button>
+          <button class="btn-pill" style="padding:10px 16px;" onclick="closeProfileView(); setWing(true);">New Post</button>
+        `
+        : `
+          <button class="btn-follow-pill ${isFollowing ? "following" : ""}" style="padding:10px 16px;" onclick="toggleFollow('${user.id}')">
+            <span>${isFollowing ? "Following" : "Follow"}</span>
+          </button>
+          <button class="btn-pill" style="padding:10px 16px;" onclick="openChatWithPeer('${user.id}')">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2zm4 6v2h8v-2H8z"/></svg>
+            <span>Message</span>
+          </button>
+        `;
+
+      document.getElementById("profileHeroContainer").innerHTML = `
+        <div class="profile-hero-card">
+          <div class="profile-banner">
+            <div class="profile-banner-brand">ChatterBox</div>
+            <div class="profile-banner-tag">Connect • Share • Grow</div>
+          </div>
+
+          <div class="profile-body">
+            <div class="profile-avatar-row">
+              ${avatarMarkup(user, "xl", true)}
+            </div>
+
+            <div class="name-line">
+              <span style="font-size:20px;font-weight:850;">${escapeHtml(user.display_name)}</span>
+              ${VERIFIED_SVG}
+            </div>
+            <div class="me-sub" style="font-size:13px;">@${escapeHtml(user.username || "")}</div>
+            <div class="status-line">
+              <span class="inline-dot ${online ? "" : "offline"}"></span>
+              <span>${escapeHtml(formatLastSeen(user.id))}</span>
+            </div>
+
+            <div class="profile-cta-grid">
+              ${actionButtonsHtml}
+            </div>
+
+            <div class="profile-stats-line">
+              <strong>${followers}</strong> Followers &nbsp;|&nbsp; <strong>${following}</strong> Following
+            </div>
+
+            <div class="about-box">
+              <div class="about-head">
+                <span class="info-icon-circle" style="width:17px;height:17px;font-size:11px;">i</span>
+                <span>About</span>
+              </div>
+              <div>${user.bio ? escapeHtml(user.bio) : '<span style="color:var(--muted);">No bio added yet.</span>'}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      renderProfileTabBody();
+    }
+
+    function renderProfileTabBody() {
+      if (!viewedProfileId) return;
+      const user = profilesMap[viewedProfileId];
+      const userPosts = postsData.filter(p => p.author_id === viewedProfileId);
+      const container = document.getElementById("profileTabContent");
+
+      if (profileSubtab === "about") {
+        container.innerHTML = `
+          <div class="panel-card">
+            <div class="card-title"><span>About ${escapeHtml(user?.display_name || "")}</span></div>
+            <div class="muted-xs" style="font-size:13.5px;color:var(--text-soft);">
+              ${user?.bio ? escapeHtml(user.bio) : "No bio added yet."}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const list = profileSubtab === "media"
+        ? userPosts.filter(p => Boolean(p.image_url))
+        : userPosts;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="panel-card muted-xs">${profileSubtab === "media" ? "No photos shared yet." : "No posts yet."}</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(p => renderPostCardHtml(p, false)).join("");
+    }
+
+    function openEditProfileModal() {
+      const card = document.getElementById("modalCard");
+      card.innerHTML = `
+        <div class="card-title">
+          <span>Edit Profile & About</span>
+          <button class="btn-pill" onclick="closeModal()">Close</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px;">
+          ${avatarMarkup(myProfile, "xl", true)}
+          <label class="btn-pill" style="cursor:pointer;margin-top:2px;">
+            Change Profile Picture
+            <input type="file" accept="image/*" class="hidden" onchange="uploadAvatar(event)" />
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Display Name</label>
+          <input id="editDisplayName" class="input" type="text" value="${escapeHtml(myProfile.display_name || "")}" />
+        </div>
+
+        <div class="field">
+          <label>About</label>
+          <textarea id="editProfileBio" class="textarea" rows="3" placeholder="Write something about yourself...">${escapeHtml(myProfile.bio || "")}</textarea>
+        </div>
+
+        <button class="btn-primary" onclick="saveProfileDetails()">Save Profile</button>
+      `;
+      document.getElementById("modalBackdrop").classList.remove("hidden");
+    }
+
+    async function uploadAvatar(e) {
+      const file = e.target.files?.[0];
+      if (!file || !file.type.startsWith("image/")) return showToast("Choose an image.");
+      try {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const url = await uploadToBucket("avatars", file, ext);
+        const { error } = await sb.from("profiles").update({ avatar_url: url, updated_at: new Date().toISOString() }).eq("id", currentUser.id);
+        if (error) return showToast(error.message);
+        await loadProfiles();
+        renderTopUser();
+        updateActiveChatHeader();
+        renderPeopleList();
+        renderPublicFeed();
+        if (viewedProfileId) renderProfileScreen();
+        openEditProfileModal();
+        showToast("Profile picture updated");
+      } catch (err) {
+        showToast(err.message);
+      }
+    }
+
+    async function saveProfileDetails() {
+      const name = document.getElementById("editDisplayName").value.trim();
+      const bio = document.getElementById("editProfileBio").value.trim();
+      if (!name) return showToast("Display name cannot be empty.");
+
+      const { error } = await sb.from("profiles").update({
+        display_name: name,
+        bio,
+        updated_at: new Date().toISOString()
+      }).eq("id", currentUser.id);
+
+      if (error) return showToast(error.message);
+      await loadProfiles();
+      renderTopUser();
+      updateActiveChatHeader();
+      renderPeopleList();
+      renderPublicFeed();
+      if (viewedProfileId) renderProfileScreen();
+      closeModal();
+      showToast("Profile saved");
+    }
+
+    function openCommentSection(postId) {
+      activeCommentPostId = postId;
+      replyTargetCommentId = null;
+      document.getElementById("sheetReplyBanner").classList.add("hidden");
+      document.getElementById("sheetCommentInput").value = "";
+      renderCommentSheetContent();
+      document.getElementById("commentSheetBackdrop").classList.remove("hidden");
+    }
+
+    function closeCommentSection() {
+      activeCommentPostId = null;
+      replyTargetCommentId = null;
+      document.getElementById("commentSheetBackdrop").classList.add("hidden");
+    }
+
+    function renderCommentSheetContent() {
+      if (!activeCommentPostId) return;
+      const post = postsData.find(p => p.id === activeCommentPostId);
+      const total = countTotalCommentsRecursive(activeCommentPostId);
+      document.getElementById("commentSheetTitle").textContent = `Comments (${total})`;
+
+      const postAuthor = post ? (profilesMap[post.author_id]?.display_name || "Member") : "Post";
+      document.getElementById("commentSheetSub").textContent = post?.content
+        ? `${postAuthor}: "${post.content.slice(0, 48)}${post.content.length > 48 ? "..." : ""}"`
+        : `Post by ${postAuthor}`;
+
+      const all = commentsByPost[activeCommentPostId] || [];
+      const byParent = {};
+      all.forEach(c => {
+        const key = c.parent_comment_id || "ROOT";
+        (byParent[key] = byParent[key] || []).push(c);
+      });
+
+      function renderBranch(parentKey, depth) {
+        const kids = byParent[parentKey] || [];
+        return kids.map(c => {
+          const author = profilesMap[c.author_id] || { display_name: "Member" };
+          const liked = myCommentLikesSet.has(c.id);
+          const likeCount = commentLikesByComment[c.id] || 0;
+          const replyCount = (byParent[c.id] || []).length;
+          return `
+            <div class="comment-node" style="margin-left:${Math.min(depth * 12, 32)}px;">
+              <div class="comment-meta">
+                <span style="cursor:pointer;" onclick="closeCommentSection(); openProfileView('${c.author_id}')">
+                  <strong style="color:var(--text);">${escapeHtml(author.display_name)}</strong>
+                </span>
+                <span>${new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              <div class="comment-body">${escapeHtml(c.content)}</div>
+              <div class="comment-actions">
+                <button onclick="toggleCommentLike('${c.id}')">${liked ? "❤️" : "🤍"} ${likeCount}</button>
+                <button onclick="prepareSheetReply('${c.id}', '${escapeJs(author.display_name)}')">Reply (${replyCount})</button>
+              </div>
+              ${renderBranch(c.id, depth + 1)}
+            </div>
+          `;
+        }).join("");
+      }
+
+      const bodyEl = document.getElementById("commentSheetBody");
+      bodyEl.innerHTML = renderBranch("ROOT", 0) || `<div class="muted-xs" style="text-align:center;margin-top:24px;">No comments yet.</div>`;
+    }
+
+    function prepareSheetReply(commentId, authorName) {
+      replyTargetCommentId = commentId;
+      const banner = document.getElementById("sheetReplyBanner");
+      banner.classList.remove("hidden");
+      banner.innerHTML = `Replying to <strong>${escapeHtml(authorName)}</strong> • <button style="color:#93c5fd;" onclick="cancelSheetReply()">Cancel</button>`;
+      document.getElementById("sheetCommentInput").focus();
+    }
+
+    function cancelSheetReply() {
+      replyTargetCommentId = null;
+      document.getElementById("sheetReplyBanner").classList.add("hidden");
+    }
+
+    async function toggleCommentLike(commentId) {
+      if (myCommentLikesSet.has(commentId)) {
+        await sb.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", currentUser.id);
+      } else {
+        await sb.from("comment_likes").insert({ comment_id: commentId, user_id: currentUser.id });
+      }
+      await loadPublicWing();
+    }
+
+    async function submitSheetComment() {
+      if (!activeCommentPostId) return;
+      const inp = document.getElementById("sheetCommentInput");
+      const text = (inp.value || "").trim();
+      if (!text) return;
+
+      const { error } = await sb.from("post_comments").insert({
+        post_id: activeCommentPostId,
+        parent_comment_id: replyTargetCommentId,
+        author_id: currentUser.id,
+        content: text
+      });
+      if (error) return showToast(error.message);
+
+      inp.value = "";
+      cancelSheetReply();
+      await loadPublicWing();
+    }
+
+    async function loadNotificationsBadge() {
+      const { count } = await sb
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("recipient_id", currentUser.id)
+        .eq("is_read", false);
+      const badge = document.getElementById("notifBadge");
+      if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : String(count);
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    async function openNotifModal() {
+      const { data } = await sb
+        .from("notifications")
+        .select("*")
+        .eq("recipient_id", currentUser.id)
+        .order("created_at", { ascending: false })
+        .limit(25);
+
+      await sb.from("notifications").update({ is_read: true }).eq("recipient_id", currentUser.id).eq("is_read", false);
+      loadNotificationsBadge();
+
+      const card = document.getElementById("modalCard");
+      card.innerHTML = `
+        <div class="card-title">
+          <span>Notifications</span>
+          <button class="btn-pill" onclick="closeModal()">Close</button>
+        </div>
+        ${(data || []).length ? (data || []).map(n => `
+          <div class="person-row" style="margin-bottom:8px;">
+            <div>
+              <div style="font-size:13px;">${escapeHtml(n.message)}</div>
+              <div class="muted-xs">${new Date(n.created_at).toLocaleString()}</div>
+            </div>
+            <button class="btn-follow-pill" onclick="closeModal(); setWing(true);">View</button>
+          </div>
+        `).join("") : '<div class="muted-xs">No notifications yet.</div>'}
+      `;
+      document.getElementById("modalBackdrop").classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("modalBackdrop").classList.add("hidden");
+    }
+
+    function subscribeRealtime() {
+      if (subscribeRealtime._sub) sb.removeChannel(subscribeRealtime._sub);
+      const channel = sb.channel("cb-live", {
+        config: { presence: { key: currentUser.id } }
+      });
+
+      channel
+        .on("presence", { event: "sync" }, () => {
+          const state = channel.presenceState();
+          onlineUserIds = new Set(Object.keys(state));
+          updateActiveChatHeader();
+          renderPeopleList();
+          renderPublicFeed();
+          if (viewedProfileId) renderProfileScreen();
+        })
+        .on("broadcast", { event: "typing" }, ({ payload }) => {
+          if (payload?.to === currentUser.id && payload?.from) {
+            typingFromUserIds.add(payload.from);
+            updateActiveChatHeader();
+            if (activePeerId === payload.from) loadMessages();
+            clearTimeout(subscribeRealtime._typingTimers?.[payload.from]);
+            subscribeRealtime._typingTimers = subscribeRealtime._typingTimers || {};
+            subscribeRealtime._typingTimers[payload.from] = setTimeout(() => {
+              typingFromUserIds.delete(payload.from);
+              updateActiveChatHeader();
+              if (activePeerId === payload.from) loadMessages();
+            }, 2200);
+          }
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, async () => {
+          await loadConversationPeers();
+          await loadMessages();
+          renderPeopleList();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, async () => {
+          await loadBlocksAndFollows();
+          renderPeopleList();
+          renderPublicFeed();
+          if (viewedProfileId) renderProfileScreen();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "public_posts" }, () => {
+          loadPublicWing();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "post_comments" }, () => {
+          loadPublicWing();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "post_reactions" }, () => {
+          loadPublicWing();
+        })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_id=eq.${currentUser.id}` }, () => {
+          loadNotificationsBadge();
+        })
+        .subscribe(async status => {
+          if (status === "SUBSCRIBED") {
+            await channel.track({ user_id: currentUser.id, online_at: new Date().toISOString() });
+          }
+        });
+
+      subscribeRealtime._sub = channel;
+    }
+
+    function formatSec(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeJs(str) {
+      return String(str || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
